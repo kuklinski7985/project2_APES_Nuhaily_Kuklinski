@@ -17,12 +17,13 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <mqueue.h>
-#include "i2c_wrapper.h"
-#include "tempsense.h"
-#include "temp_ops.h"
-#include "light_ops.h"
-#include "remote_socket_server.h"
-#include "logger/logger.h"
+//#include "i2c_wrapper.h"
+//#include "tempsense.h"
+//#include "temp_ops.h"
+//#include "light_ops.h"
+//#include "remote_socket_server.h"
+//#include "logger/logger.h"
+#include "logger.h"
 
 #include "ipc_messq.h"
 //#include "myusrled.h"

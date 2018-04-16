@@ -42,8 +42,8 @@ int main(int argc, char* argv[])
   
   ipc_queue_init();           //main queue created
   log_queue_init();          //starts the queue fo the logger
-  temp_ipc_queue_init();      //temp sensor queue created
-  light_ipc_queue_init();     //light sensor queue created
+  //temp_ipc_queue_init();      //temp sensor queue created
+  //light_ipc_queue_init();     //light sensor queue created
 
   int checking;                    //check value for pthread creation
   input_struct * input1;           //input for pthread,couldnt get to work w/o
@@ -52,10 +52,9 @@ int main(int argc, char* argv[])
 
   char log_filename[DEFAULT_BUF_SIZE];
   ipcmessage_t ipc_msg;
- // remote_socket_server_init();
 
-  input1 = (input_struct*)malloc(sizeof(input_struct));
-  input1->member1 = 1234;
+  //input1 = (input_struct*)malloc(sizeof(input_struct));
+  //input1->member1 = 1234;
   pthread_attr_init(&attr);
 
   checking = pthread_create(&log_thread, &attr, logger, (void*)input1);
@@ -65,22 +64,22 @@ int main(int argc, char* argv[])
     return -1;
   }
 
-  checking = pthread_create(&tempops_thread, &attr, temp_ops,(void*)input1);
+  /*checking = pthread_create(&tempops_thread, &attr, temp_ops,(void*)input1);
   if(checking)
   {
     fprintf(stderr, "Error creating temp_ops thread");
     return -1;
-  }
+  }*/
 
-  checking = pthread_create(&lightops_thread, &attr, light_ops, (void*)input1);
+  /*checking = pthread_create(&lightops_thread, &attr, light_ops, (void*)input1);
   if(checking)
   {
     fprintf(stderr, "Error creating light_ops thread");
     return -1;
-  }
+  }*/
 
 
- checking = pthread_create(&socket_thread, &attr, remote_socket_server_init,(void*)input1);
+ //checking = pthread_create(&socket_thread, &attr, remote_socket_server_init,(void*)input1);
 
   checking = pthread_create(&hb_thread, &attr, heartbeat, (void*)input1);
   if(checking)
@@ -116,7 +115,6 @@ int main(int argc, char* argv[])
     bizzounce = 1;
   }
  
-
  /******monitors the main message queue for new messages and distributes accordingly******/
  /******also provides the system heartbeat for the sensors*******/
   mq_getattr(ipc_queue, &ipc_attr);
@@ -167,25 +165,25 @@ int main(int argc, char* argv[])
   mq_send(ipc_queue, msg_str, strlen(msg_str), 0);
 
   mq_close(ipc_queue);
-  mq_close(temp_ipc_queue);
-  mq_close(light_ipc_queue);
+  //mq_close(temp_ipc_queue);
+  //mq_close(light_ipc_queue);
   if(mq_unlink("/ipcmain") == -1)
     {
       	printf("unlink error: %s\n", strerror(errno));
     }
 
-  if(mq_unlink("/ipctemperature") == -1)
+  /*if(mq_unlink("/ipctemperature") == -1)
     {
       printf("unlink error: %s\n", strerror(errno));
-    }
+    }*/
 
-  pthread_join(tempops_thread, NULL);
+  //pthread_join(tempops_thread, NULL);
 
-  pthread_join(lightops_thread, NULL);
+  //pthread_join(lightops_thread, NULL);
 
   pthread_join(log_thread, NULL);
 
-  pthread_join(socket_thread,NULL);
+  //pthread_join(socket_thread,NULL);
   
   pthread_join(hb_thread, NULL);
 
@@ -211,20 +209,20 @@ void* heartbeat()
   build_ipc_msg(ipc_msg, msg_str);
   mq_send(ipc_queue, msg_str, strlen(msg_str), 0);
 
-  temp_hb_count = 0;
-  temp_hb_err = 0;
-  light_hb_count = 0;
-  light_hb_err = 0;
+  //temp_hb_count = 0;
+  //temp_hb_err = 0;
+  //light_hb_count = 0;
+  //light_hb_err = 0;
   log_hb_count = 0;
   log_hb_err = 0;
 
-  timer_t temp_hb;
+  //timer_t temp_hb;
   //sets values for timer interval and initial expiration
-  struct itimerspec temp_hb_interval;
+  //struct itimerspec temp_hb_interval;
   //descibe the way a process is to be notified about and event
-  struct sigevent temp_hb_sig;
+  //struct sigevent temp_hb_sig;
 
-  temp_hb_sig.sigev_notify = SIGEV_THREAD;
+  /*temp_hb_sig.sigev_notify = SIGEV_THREAD;
   temp_hb_sig.sigev_notify_function = hb_warn;
   temp_hb_sig.sigev_value.sival_ptr = &temp_hb;
   temp_hb_sig.sigev_notify_attributes = NULL;
@@ -235,10 +233,10 @@ void* heartbeat()
   temp_hb_interval.it_interval.tv_nsec = temp_hb_interval.it_value.tv_nsec;//0;
   timer_create(CLOCK_REALTIME, &temp_hb_sig, &temp_hb);  //creates new timer
   timer_settime(temp_hb, 0, &temp_hb_interval, 0);    //this starts the counter
-
+*/
   while(bizzounce == 0)
   {
-    if(temp_hb_count > 10)
+    /*if(temp_hb_count > 10)
     {
       printf("Heartbeat thread: error.\n");
       temp_hb_err = 1;
@@ -247,7 +245,7 @@ void* heartbeat()
     {
       printf("Heartbeat thread: error.\n");
       light_hb_err = 1;
-    }
+    }*/
     if(log_hb_count > 10)
     {
       printf("Heartbeat thread: error.\n");

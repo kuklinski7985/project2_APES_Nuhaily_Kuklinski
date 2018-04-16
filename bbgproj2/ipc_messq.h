@@ -23,8 +23,7 @@
 #include <ctype.h>
 #include <mqueue.h>
 #include <errno.h>
-#include "logger/logger.h"
-#include "temp_ops.h"
+#include "logger.h"
 #include "myusrled.h"
 
 #ifndef ipc_messq_h_
@@ -33,18 +32,18 @@
 #define DEFAULT_BUF_SIZE   256
 
 extern file_t ipcfile;         //creates a file where queue info is stored, mounted
-extern file_t tempipcfile;     //creates file where temperature queue info is stored, mounted
+//extern file_t tempipcfile;     //creates file where temperature queue info is stored, mounted
 
 extern mqd_t ipc_queue;        //queue associated with main thread
-extern mqd_t temp_ipc_queue;    //queue associated with temp sensor
-extern mqd_t light_ipc_queue;
+//extern mqd_t temp_ipc_queue;    //queue associated with temp sensor
+//extern mqd_t light_ipc_queue;
 extern mqd_t log_queue;
 
 extern struct mq_attr ipc_attr;
-struct mq_attr temp_ipc_attr;
-struct mq_attr light_ipc_attr;
-struct sigevent sigevent_temp_ipc_notify;
-struct sigevent sigevent_light_ipc_notify;
+//struct mq_attr temp_ipc_attr;
+//struct mq_attr light_ipc_attr;
+//struct sigevent sigevent_temp_ipc_notify;
+//struct sigevent sigevent_light_ipc_notify;
 
 extern struct mq_attr ipc_attr;
 
@@ -69,19 +68,19 @@ typedef struct ipcmessage {
   pid_t src_pid;                    //pid of process creating the message
   location_t destination;           //final destination for message
   char payload[DEFAULT_BUF_SIZE];   // message to transmit
-  temp_unit_t units_temp;
+  //temp_unit_t units_temp;
 } ipcmessage_t;
 
 void ipc_queue_init();
 void shuffler_king();
 void log_queue_init();
-void temp_ipc_queue_init();
+//void temp_ipc_queue_init();
 
-void shuffler_mini_temp();
+//void shuffler_mini_temp();
 
-void light_ipc_queue_init();
+//void light_ipc_queue_init();
 
-void shuffler_mini_light();
+//void shuffler_mini_light();
 
 void build_ipc_msg(ipcmessage_t msg_struct, char* ipc_msg);
 void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct);

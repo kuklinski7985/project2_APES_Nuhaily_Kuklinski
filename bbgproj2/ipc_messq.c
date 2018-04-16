@@ -7,10 +7,10 @@
 
 #include "ipc_messq.h"
 
-extern int temp_hb_count;
-extern int temp_hb_err;
-extern int light_hb_count;
-extern int light_hb_err;
+//extern int temp_hb_count;
+//extern int temp_hb_err;
+//extern int light_hb_count;
+//extern int light_hb_err;
 extern int log_hb_count;
 extern int log_hb_err;
 extern int hb_hb_count;
@@ -39,14 +39,14 @@ void shuffler_king()
         {
           switch(ipc_msg.source)
           {
-            case(IPC_TEMP):
+            /*case(IPC_TEMP):
               temp_hb_count = 0;
               temp_hb_err = 0;
               break;
             case(IPC_LIGHT):
               light_hb_count = 0;
               light_hb_err = 0;
-              break;
+              break;*/
             case(IPC_LOG):
               log_hb_count = 0;
               log_hb_err = 0;
@@ -69,14 +69,14 @@ void shuffler_king()
         break;
 
       // Items to be sent to temperature sensor task
-      case(IPC_TEMP):
+      /*case(IPC_TEMP):
         mq_send(temp_ipc_queue, ipc_queue_buff,strlen(ipc_queue_buff),0);
-        break;
+        break;*/
 
       // Items to be sent to light sensor task
-      case(IPC_LIGHT):
+      /*case(IPC_LIGHT):
         mq_send(light_ipc_queue, ipc_queue_buff,strlen(ipc_queue_buff),0);
-        break;
+        break;*/
       
       // Type-less or erroneous items
       case(IPC_NONE):
@@ -89,7 +89,7 @@ void shuffler_king()
  * @brief Previously intended to be temperature sensor-specific, now not used
  * 
  */
-void shuffler_mini_temp()
+/*void shuffler_mini_temp()
 {
   char temp_ipc_queue_buff[DEFAULT_BUF_SIZE];
   
@@ -106,7 +106,7 @@ void shuffler_mini_temp()
       //printf("remaining on temp queue %ld\n",temp_ipc_attr.mq_curmsgs);
       //printf("Temp Q read message: %s\n",temp_ipc_queue_buff);
     }
-}
+}*/
 
 /**
  * @brief Initialize IPC queue. Requires mount of appropriate mqueue folder
@@ -142,7 +142,7 @@ void log_queue_init()
  * @brief Initialize temp sensor queue. Requires mount of mqueue folder.
  * 
  */
-void temp_ipc_queue_init()
+/*void temp_ipc_queue_init()
 {
   temp_ipc_attr.mq_maxmsg = 255;
   temp_ipc_attr.mq_msgsize = sizeof(char)*DEFAULT_BUF_SIZE;
@@ -159,13 +159,13 @@ void temp_ipc_queue_init()
     printf("mq_notify error: %s\n", strerror(errno));
   }
   
-}
+}*/
 
 /**
  * @brief Initialize light sensor queue. Requires mount of mqueue folder.
  * 
  */
-void light_ipc_queue_init()
+/*void light_ipc_queue_init()
 {
   //struct mq_attr light_ipc_attr;
 
@@ -184,13 +184,13 @@ void light_ipc_queue_init()
       printf("mq_notify error: %s\n", strerror(errno));
     }
   
-}
+}*/
 
 /**
  * @brief Previously intended to be light sensor specific handler. Not used.
  * 
  */
-void shuffler_mini_light()
+/*void shuffler_mini_light()
 {
   char light_ipc_queue_buff[DEFAULT_BUF_SIZE];
   printf("entering light shuffler\n");
@@ -209,7 +209,7 @@ void shuffler_mini_light()
       printf("Light Q read message: %s\n",light_ipc_queue_buff);
       sleep(1);
     }
-}
+}*/
 
 /**
  * @brief Translate from ipc message struct type to string for queue transmit

@@ -32,7 +32,7 @@
 #include <mqueue.h>
 #include <errno.h>
 #include "sync_fileio.h"
-#include "../ipc_messq.h"
+#include "ipc_messq.h"
 
 #define DEFAULT_BUF_SIZE     256
 

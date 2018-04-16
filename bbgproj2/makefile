@@ -1,4 +1,4 @@
-SOURCES = main.c i2c_wrapper.c logger.c sync_fileio.c ipc_messq.c myusrled.c
+SOURCES = main.c logger.c sync_fileio.c ipc_messq.c myusrled.c
 SOURCES_SOCK = 
 OBJS = $(SOURCES:.c=.o)
 OBJS_SOCK =
@@ -6,7 +6,8 @@ IMP = $(SOURCES:.c=.i)
 IMP_SOCK = $(SOURCES_SOCK:.c=.i)
 INCLUDES = main.h
 
-CC = arm-linux-gnueabihf-gcc
+#CC = arm-linux-gnueabihf-gcc
+CC = gcc
 DEBUG = -pthread -lrt #-g -Wall -Werror -O0
 CPPFLAGS =
 LDFLAGS = -lm -Wl,-Map,project1.map
