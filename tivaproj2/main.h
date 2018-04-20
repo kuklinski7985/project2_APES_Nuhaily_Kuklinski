@@ -60,11 +60,13 @@ void vMasterTask(void* pvParameters);
 void vUARTRxTerminalTask(void* pvParameters);
 void vGPIOTask(void* pvParameters);
 void vHeartbeatTask(void* pvParameters);
+void vHBTimerCallback(void* pvParameters);
 
 // Interrupt handlers
 void UARTTerminalIntHandler(void);
 
 int xInitThreads(void);
+void vSocketTask(void *pvParameters);
 
 // Timer callbacks
 void vHBTimerCallback(void* pvParameters);

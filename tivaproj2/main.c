@@ -17,6 +17,7 @@ TaskHandle_t masterTask;
 TaskHandle_t terminalTask;
 TaskHandle_t gpioTask;
 TaskHandle_t heartbeatTask;
+TaskHandle_t socketTask;
 
 QueueHandle_t ipc_msg_queue;
 QueueHandle_t uart_term_rx_queue;
@@ -31,6 +32,9 @@ const char terminalTaskName[17] = "Terminal Rx Task";
 const char masterTaskName[12] = "Master Task";
 const char gpioTaskName[10] = "GPIO Task";
 const char heartbeatTaskName[15] = "Heartbeat Task";
+const char socketTaskName[11] = "Socket Task";
+
+
 
 const int hb_timeout = 10;
 
@@ -112,6 +116,7 @@ int xInitThreads(void)
     xTaskCreate(vUARTRxTerminalTask, terminalTaskName, 1024, NULL, 1, &terminalTask);
     xTaskCreate(vGPIOTask, gpioTaskName, 1024, NULL, 1, &gpioTask);
     xTaskCreate(vHeartbeatTask, heartbeatTaskName, 512, NULL, 1, &heartbeatTask);
+    xTaskCreate(vSocketTask, socketTaskName, 512, NULL, 1, &socketTask);
     return 0;
 }
 
@@ -443,3 +448,65 @@ void vHBTimerCallback(void* pvParameters)
     hb_terminal++;
     hb_gpio++;
 }
+
+
+void vSocketTask(void *pvParameters)
+{
+    /*Socket_t xclientHandle;
+    struct freertos_sockaddr xclientAddress;
+    size_t xbytesSent = 0;
+    size_t xbytesTOSEND = 256;
+    uint16_t port1 = 8090;
+    char ipc_mess[xbytesTOSEND];
+    sprintf(ipc_mess,"%s", "This message is bound for the BBG SERVER!!");
+
+    xclientAddress.sin_port = FreeRTOS_htons(port1);
+    //might need to use FreeRTOS_inet_addr() to conform to Berkley sockets
+    xclientAddress.sin_addr = FreeRTOS_inet_addr_quick(192, 168,7,2);
+
+    xclientHandle = FreeRTOS_socket(FREERTOS_AF_INET,FREERTOS_SOCK_STREAM,FREERTOS_IPPROTO_TCP);
+    if(xclientHandle == FREERTOS_INVALID_SOCKET)
+    {
+        printf("Error Creating Socket: %s\n", "FREERTOS_INVALID_SOCKET");
+    }
+
+    if(FreeRtos_connect(xclientHandle, &xclientAddress, sizeof(xclientAddress))==0)
+    {
+        xbytesSent = FreeRTOS_send(xclientHandle, &ipc_mess, xbytesTOSEND,0);
+        if(xbytesSent == -pdFREERTOS_ERRNO_ENOTCONN)
+        {
+            printf("error on send: %s\n", "FREERTOS_ERRNO_ENOTCONN");
+        }
+    }
+
+    FreeRTOS_shutdown(xclientHandle, FREERTOS_SHUT_RDWR);
+    while(FreeRTOS_recv(xclientHandle, ipc_mess, xbytesTOSEND,0) >= 0)
+    {
+        vTaskDelay(pdTICKS_TO_MS(250));
+    }
+    FreeRTOS_closesocket(xclientHandle);*/
+    printf("inside socket task\n");
+    while(1);
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
