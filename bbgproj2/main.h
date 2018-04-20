@@ -22,6 +22,7 @@
 #include "ipc_messq.h"
 #include "myusrled.h"
 #include "server_socket.h"
+#include "comm.h" 
 
 #define DEFAULT_BUF_SIZE    256
 

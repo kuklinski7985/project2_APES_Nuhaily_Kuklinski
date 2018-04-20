@@ -1,4 +1,4 @@
-SOURCES = main.c logger.c sync_fileio.c ipc_messq.c myusrled.c server_socket.c
+SOURCES = main.c logger.c sync_fileio.c ipc_messq.c myusrled.c server_socket.c comm.c
 SOURCES_SOCK = 
 OBJS = $(SOURCES:.c=.o)
 OBJS_SOCK =

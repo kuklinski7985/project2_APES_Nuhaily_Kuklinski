@@ -32,55 +32,40 @@
 #define DEFAULT_BUF_SIZE   256
 
 extern file_t ipcfile;         //creates a file where queue info is stored, mounted
-//extern file_t tempipcfile;     //creates file where temperature queue info is stored, mounted
 
 extern mqd_t ipc_queue;        //queue associated with main thread
-//extern mqd_t temp_ipc_queue;    //queue associated with temp sensor
-//extern mqd_t light_ipc_queue;
 extern mqd_t log_queue;
 
 extern struct mq_attr ipc_attr;
-//struct mq_attr temp_ipc_attr;
-//struct mq_attr light_ipc_attr;
-//struct sigevent sigevent_temp_ipc_notify;
-//struct sigevent sigevent_light_ipc_notify;
 
 extern struct mq_attr ipc_attr;
 
 extern mqd_t ipc_queue;
 
-/*types of messages that are possible*/
+/*types of ipc messages that are possible*/
 typedef enum{
-  QUERY, DATA, INFO, TERMINATE, MSG_ERROR, HEARTBEAT
+  MSG_NONE, MSG_QUERY, MSG_DATA, MSG_INFO, MSG_TERMINATE, MSG_ERROR, MSG_HB
 } message_t;
 
 /*locations messages can be sent to and received from*/
 typedef enum{
-  IPC_NONE, IPC_LOG, IPC_TEMP, IPC_LIGHT, IPC_MAIN, IPC_SOCKET, IPC_USER, IPC_HB
+  IPC_NONE, IPC_LOG, IPC_MAIN, IPC_SOCKET, IPC_USER, IPC_HB
 } location_t;
-
 
 /*struct to define messages passed around to all parts of the system*/
 typedef struct ipcmessage {
   char timestamp[10];
   message_t type;                   //message identifier
+  comm_t comm_type;
   location_t source;                //where message originates from
   pid_t src_pid;                    //pid of process creating the message
   location_t destination;           //final destination for message
   char payload[DEFAULT_BUF_SIZE];   // message to transmit
-  //temp_unit_t units_temp;
 } ipcmessage_t;
 
 void ipc_queue_init();
 void shuffler_king();
 void log_queue_init();
-//void temp_ipc_queue_init();
-
-//void shuffler_mini_temp();
-
-//void light_ipc_queue_init();
-
-//void shuffler_mini_light();
 
 void build_ipc_msg(ipcmessage_t msg_struct, char* ipc_msg);
 void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct);
