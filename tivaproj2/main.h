@@ -35,6 +35,9 @@
 // Project 2 includes
 #include "ipc_message.h"
 
+//socket, MAC, and TCP/IP
+#include "networkinterface.h"
+
 #ifndef MAIN_H_
 #define MAIN_H_
 

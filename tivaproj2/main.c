@@ -452,6 +452,11 @@ void vHBTimerCallback(void* pvParameters)
 
 void vSocketTask(void *pvParameters)
 {
+    //initializing the MAC layer for interface to the TPC/IP layer
+    xNetworkInterfaceInitialise();
+    //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+
+
     /*Socket_t xclientHandle;
     struct freertos_sockaddr xclientAddress;
     size_t xbytesSent = 0;
