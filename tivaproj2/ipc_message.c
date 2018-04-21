@@ -19,7 +19,7 @@ void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct)
   int i=0;
   int j=0;
   char tmp1[1];
-  char tmp2[TASKNAME_SIZE];
+  //char tmp2[TASKNAME_SIZE];
 
   // extract timestamp
   for(i=0, j=0; ipc_msg[i] != '\n' && ipc_msg[i] != '\0'; i++, j++)
