@@ -18,6 +18,7 @@ TaskHandle_t terminalTask;
 TaskHandle_t gpioTask;
 TaskHandle_t heartbeatTask;
 TaskHandle_t socketTask;
+TaskHandle_t RFIDTask;
 
 QueueHandle_t ipc_msg_queue;
 QueueHandle_t uart_term_rx_queue;
@@ -33,6 +34,7 @@ const char masterTaskName[12] = "Master Task";
 const char gpioTaskName[10] = "GPIO Task";
 const char heartbeatTaskName[15] = "Heartbeat Task";
 const char socketTaskName[11] = "Socket Task";
+const char RFIDTaskName[9] = "RFID Task";
 
 
 
@@ -117,6 +119,7 @@ int xInitThreads(void)
     xTaskCreate(vGPIOTask, gpioTaskName, 1024, NULL, 1, &gpioTask);
     xTaskCreate(vHeartbeatTask, heartbeatTaskName, 512, NULL, 1, &heartbeatTask);
     xTaskCreate(vSocketTask, socketTaskName, 512, NULL, 1, &socketTask);
+    xTaskCreate(vRFIDTask, RFIDTaskName, 512, NULL, 1, &RFIDTask);
     return 0;
 }
 
@@ -127,24 +130,42 @@ int xInitThreads(void)
 void ConfigureUART(void)
 {
     // Enable the GPIO Peripheral used by the UART.
+    //should include UART0 and UART3
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOP);
 
     // Enable UART0 module
+    //include UART3 module
     ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
+    ROM_SysCtlPeripheralEnable(SYSCTL_PERIPH_UART6);
+
+
 
     // Configure GPIO Pins for UART mode.
     ROM_GPIOPinConfigure(GPIO_PA0_U0RX);
     ROM_GPIOPinConfigure(GPIO_PA1_U0TX);
+
+    ROM_GPIOPinConfigure(GPIO_PP0_U6RX);
+    ROM_GPIOPinConfigure(GPIO_PP1_U6TX);
     ROM_GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+    ROM_GPIOPinTypeUART(GPIO_PORTP_BASE, GPIO_PIN_0 | GPIO_PIN_1);
+
 
     //
     // Enable the UART interrupt.
     //
+
+    ROM_UARTConfigSetExpClk(UART6_BASE, f_sysclk, 19200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                             UART_CONFIG_PAR_NONE));
     ROM_IntEnable(INT_UART0);
+    ROM_IntEnable(INT_UART6);
     ROM_UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT);
+    ROM_UARTIntEnable(UART6_BASE, UART_INT_RX | UART_INT_RT);
 
     // Initialize the UART for console I/O.
-    UARTStdioConfig(0, 115200, f_sysclk);
+    //UARTBAUDRATE should be changed back to 115200, #define in main.h
+    UARTStdioConfig(0, UARTBAUDRATE, f_sysclk);
+
 }
 
 /**
@@ -199,7 +220,7 @@ void vMasterTask(void* pvParameters)
                     case TASK_TERMINAL:
                         // decode input and act
                        // UARTprintf("Main task detects terminal input: %s\n", last_queue_msg.payload);
-                        xProcessTerminalInput(last_queue_msg.payload); // come up with some kind of return status
+                        //xProcessTerminalInput(last_queue_msg.payload); // come up with some kind of return status
                         break;
                     case TASK_HB:
                         xProcessHBInput(last_queue_msg.payload);
@@ -319,6 +340,63 @@ void UARTTerminalIntHandler()
     xQueueSendFromISR(uart_term_rx_queue, rxbuf, NULL);
  //   UARTprintf("%s", rxbuf);    // echo
     return;
+}
+
+void UART_RFID_Handler(void)
+{
+    static uint8_t elements = 0;
+    static uint8_t data_num_bytes=0;
+
+    rfid_data_recv[elements] = ROM_UARTCharGet(UART6_BASE);
+    //UARTprintf("recv[%d]: %02x\n",elements,rfid_data_recv[elements]);
+
+    if(elements==2)
+    {
+        data_num_bytes = rfid_data_recv[2];
+    }
+    elements++;
+    if(elements==(data_num_bytes+4))
+    {
+        elements=0;
+        data_num_bytes=0;
+        rfid_handlder_exit_flag = 1;
+    }
+}
+
+void UARTRFID_send(char * RFID_buffer, uint32_t byteCount)
+{
+    int i =0;
+    for(i =0; i<byteCount;i++)
+    {
+        ROM_UARTCharPut(UART6_BASE, RFID_buffer[i]);
+    }
+}
+
+void vRFIDTask(void *pvParameters)
+{
+    //write the proper baud rate
+    //reset the module
+    //wait for response from module with version information
+    //timeout if not received in 10 seconds
+    //push information to the logger via IPC
+    //put module into seek mode
+    //wait for a response
+    //when received, print the received infromation
+    //push information to the logger via IPC
+    //put back into seek mode, wait for another chip read
+    uint8_t i = 0;
+    //UARTprintf("\nafter a delay, should be receiving rfid data\n");
+    const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
+    vTaskDelay(xDelay);
+
+
+    RFID_reset();
+    for(i=0; i<12; i++)
+    {
+        UARTprintf("data from task[%d]: %02x\n",i,rfid_data_recv[i]);
+    }
+
+    while(1);
 }
 
 /**
@@ -452,10 +530,11 @@ void vHBTimerCallback(void* pvParameters)
 
 void vSocketTask(void *pvParameters)
 {
-    //initializing the MAC layer for interface to the TPC/IP layer
-    xNetworkInterfaceInitialise();
-    //FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, ucMACAddress);
+    printf("inside socket task\n");
 
+
+    //initializing the MAC layer for interface to the TPC/IP layer
+    //xNetworkInterfaceInitialise();
 
     /*Socket_t xclientHandle;
     struct freertos_sockaddr xclientAddress;
@@ -475,7 +554,7 @@ void vSocketTask(void *pvParameters)
         printf("Error Creating Socket: %s\n", "FREERTOS_INVALID_SOCKET");
     }
 
-    if(FreeRtos_connect(xclientHandle, &xclientAddress, sizeof(xclientAddress))==0)
+    if(FreeRTOS_connect(xclientHandle, &xclientAddress, sizeof(xclientAddress))==0)
     {
         xbytesSent = FreeRTOS_send(xclientHandle, &ipc_mess, xbytesTOSEND,0);
         if(xbytesSent == -pdFREERTOS_ERRNO_ENOTCONN)
@@ -487,10 +566,10 @@ void vSocketTask(void *pvParameters)
     FreeRTOS_shutdown(xclientHandle, FREERTOS_SHUT_RDWR);
     while(FreeRTOS_recv(xclientHandle, ipc_mess, xbytesTOSEND,0) >= 0)
     {
-        vTaskDelay(pdTICKS_TO_MS(250));
+        //vTaskDelay(pdTICKS_TO_MS(250));
     }
     FreeRTOS_closesocket(xclientHandle);*/
-    printf("inside socket task\n");
+
     while(1);
 
 

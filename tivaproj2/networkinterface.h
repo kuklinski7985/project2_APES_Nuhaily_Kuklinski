@@ -14,12 +14,16 @@
 
 //#include "main.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
+#include "inc/hw_nvic.h"
+#include "inc/hw_emac.h"
+#include "inc/hw_flash.h"
 #include "driverlib/debug.h"
 #include "driverlib/fpu.h"
 #include "driverlib/gpio.h"
@@ -31,6 +35,7 @@
 #include "driverlib/sysctl.h"
 #include "driverlib/timer.h"
 #include "driverlib/uart.h"
+#include "driverlib/flash.h"
 #include "utils/uartstdio.h"
 
 // FreeRTOS
@@ -66,8 +71,12 @@ uint8_t g_ppui8RxBuffer[NUM_RX_DESCRIPTORS][RX_BUFFER_SIZE];
 /*initializes the MAC and PHY layers for interface to the TCP/IP layer*/
 BaseType_t xNetworkInterfaceInitialise( void );
 
-BaseType_t xNetworkInterfaceOutput( NetworkBufferDescriptor_t * const pxDescriptor,
-                                    BaseType_t xReleaseAfterSend );
+/*transmit a packet from the supplied buffer, called directly from the application
+ * pui8Buf points to ethernet frame to send, i32BufLen number of bytes in the frame
+ */
+//static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen);
+
+//BaseType_t xNetworkInterfaceOutput( NetworkBufferDescriptor_t * const pxDescriptor, BaseType_t xReleaseAfterSend );
 
 //void vNetworkInterfaceAllocateRAMToBuffers(NetworkBufferDescriptor_t xDescriptors[ ipconfigNUM_NETWORK_BUFFERS ] );
 
@@ -80,10 +89,10 @@ int32_t ProcessReceivedPacket(void);
 //interrupt handler for the ethernet interrupt
 void EthernetIntHandler(void);
 
-/*transmit a packet from the supplied buffer, called directly from the application
- * pui8Buf points to ethernet frame to send, i32BufLen number of bytes in the frame
- */
-static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen);
+
+
+void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent );
+
 
 
 #endif /*_networkinterface_h_*/

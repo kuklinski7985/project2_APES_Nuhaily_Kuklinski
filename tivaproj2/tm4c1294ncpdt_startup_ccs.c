@@ -47,6 +47,8 @@ extern void xPortPendSVHandler(void);
 extern void vPortSVCHandler(void);
 extern void xPortSysTickHandler(void);
 extern void UARTTerminalIntHandler(void);
+extern void UART_RFID_Handler(void);
+
 
 //*****************************************************************************
 //
@@ -148,7 +150,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // UART3 Rx and Tx
     IntDefaultHandler,                      // UART4 Rx and Tx
     IntDefaultHandler,                      // UART5 Rx and Tx
-    IntDefaultHandler,                      // UART6 Rx and Tx
+    UART_RFID_Handler,                      // UART6 Rx and Tx
     IntDefaultHandler,                      // UART7 Rx and Tx
     IntDefaultHandler,                      // I2C2 Master and Slave
     IntDefaultHandler,                      // I2C3 Master and Slave

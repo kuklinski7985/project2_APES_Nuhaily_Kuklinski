@@ -20,6 +20,14 @@ BaseType_t xNetworkInterfaceInitialise( void )
     uint8_t ui8PHYAddr;
     uint8_t pui8MACAddr[6];
 
+    static const uint8_t ucIPAddress[ 4 ] = { 10, 10, 10, 200 };
+    static const uint8_t ucNetMask[ 4 ] = { 255, 0, 0, 0 };
+    static const uint8_t ucGatewayAddress[ 4 ] = { 10, 10, 10, 1 };
+
+    /* The following is the address of an OpenDNS server. */
+    //change this to the IP address of the BBG
+    static const uint8_t ucDNSServerAddress[ 4 ] = { 208, 67, 222, 222 };
+
     //read mac address from the user registers
     FlashUserGet(&ui32User0, &ui32User1);
     if((ui32User0 == 0xffffffff) || (ui32User1 == 0xffffffff))
@@ -77,7 +85,6 @@ BaseType_t xNetworkInterfaceInitialise( void )
     //**********************************************this needs to be written as a seperate function
     InitDescriptors(EMAC0_BASE);
 
-
     //program HW with MAC address
     EMACAddrSet(EMAC0_BASE, 0, pui8MACAddr);
 
@@ -109,6 +116,8 @@ BaseType_t xNetworkInterfaceInitialise( void )
 
     //enable the ethernet RX packet interrup source
     EMACIntEnable(EMAC0_BASE, EMAC_INT_RECEIVE);
+
+    FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, pui8MACAddr);// ucMACAddress);
     return (pdPASS);
 }
 
@@ -177,7 +186,7 @@ int32_t ProcessReceivedPacket(void)
                 //pass the received buffer up to the application to handle
                 //???????application as in TCP/IP or user program??????
                 //this might have to be written
-                ApplicationProcessFrame(i32FrameLen, g_psRxDescriptor[g_ui32RxDescIndex].pvBuffer1);
+                //ApplicationProcessFrame(i32FrameLen, g_psRxDescriptor[g_ui32RxDescIndex].pvBuffer1);
             }
         }
         //hand the descriptor back to the HW
@@ -209,7 +218,7 @@ void EthernetIntHandler(void)
     }
 }
 
-static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
+/*static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
 {
     //wait for transmit descriptor to free up
     while(g_psTxDescriptor[g_ui32TxDescIndex].ui32CtrlStatus & DES0_TX_CTRL_OWN)
@@ -236,6 +245,51 @@ static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
     //return the number of bytes sent
     return(i32BufLen);
 
+}*/
+
+void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
+{
+    uint32_t ulIPAddress, ulNetMask, ulGatewayAddress, ulDNSServerAddress;
+    static BaseType_t xTasksAlreadyCreated = pdFALSE;
+    int8_t cBuffer[ 16 ];
+
+        /* Check this was a network up event, as opposed to a network down event. */
+        if( eNetworkEvent == eNetworkUp )
+        {
+            /* Create the tasks that use the IP stack if they have not already been
+            created. */
+            if( xTasksAlreadyCreated == pdFALSE )
+            {
+                /*
+                 * Create the tasks here.
+                 */
+
+                xTasksAlreadyCreated = pdTRUE;
+            }
+
+            /* The network is up and configured.  Print out the configuration,
+            which may have been obtained from a DHCP server. */
+            FreeRTOS_GetAddressConfiguration( &ulIPAddress,
+                                              &ulNetMask,
+                                              &ulGatewayAddress,
+                                              &ulDNSServerAddress );
+
+            /* Convert the IP address to a string then print it out. */
+            FreeRTOS_inet_ntoa( ulIPAddress, cBuffer );
+            printf( "IP Address: %s\r\n", cBuffer );
+
+            /* Convert the net mask to a string then print it out. */
+            FreeRTOS_inet_ntoa( ulNetMask, cBuffer );
+            printf( "Subnet Mask: %s\r\n", cBuffer );
+
+            /* Convert the IP address of the gateway to a string then print it out. */
+            FreeRTOS_inet_ntoa( ulGatewayAddress, cBuffer );
+            printf( "Gateway IP Address: %s\r\n", cBuffer );
+
+            /* Convert the IP address of the DNS server to a string then print it out. */
+            FreeRTOS_inet_ntoa( ulDNSServerAddress, cBuffer );
+            printf( "DNS server IP Address: %s\r\n", cBuffer );
+        }
 }
 
 
