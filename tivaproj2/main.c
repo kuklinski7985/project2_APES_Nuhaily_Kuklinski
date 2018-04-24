@@ -17,7 +17,6 @@ TaskHandle_t masterTask;
 TaskHandle_t terminalTask;
 TaskHandle_t gpioTask;
 TaskHandle_t heartbeatTask;
-TaskHandle_t socketTask;
 TaskHandle_t RFIDTask;
 
 QueueHandle_t ipc_msg_queue;
@@ -33,12 +32,11 @@ const char terminalTaskName[17] = "Terminal Rx Task";
 const char masterTaskName[12] = "Master Task";
 const char gpioTaskName[10] = "GPIO Task";
 const char heartbeatTaskName[15] = "Heartbeat Task";
-const char socketTaskName[11] = "Socket Task";
 const char RFIDTaskName[9] = "RFID Task";
 
 
 
-const int hb_timeout = 10;
+const int hb_timeout = 100;
 
 /**
  * @brief Main function. Set system clock and configure peripherals
@@ -118,8 +116,8 @@ int xInitThreads(void)
     xTaskCreate(vUARTRxTerminalTask, terminalTaskName, 1024, NULL, 1, &terminalTask);
     xTaskCreate(vGPIOTask, gpioTaskName, 1024, NULL, 1, &gpioTask);
     xTaskCreate(vHeartbeatTask, heartbeatTaskName, 512, NULL, 1, &heartbeatTask);
-    xTaskCreate(vSocketTask, socketTaskName, 512, NULL, 1, &socketTask);
     xTaskCreate(vRFIDTask, RFIDTaskName, 512, NULL, 1, &RFIDTask);
+    //xNetworkInterfaceInitialise();
     return 0;
 }
 
@@ -155,7 +153,7 @@ void ConfigureUART(void)
     // Enable the UART interrupt.
     //
 
-    ROM_UARTConfigSetExpClk(UART6_BASE, f_sysclk, 19200, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+    ROM_UARTConfigSetExpClk(UART6_BASE, f_sysclk, UARTBAUDRATE, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
                              UART_CONFIG_PAR_NONE));
     ROM_IntEnable(INT_UART0);
     ROM_IntEnable(INT_UART6);
@@ -359,7 +357,7 @@ void UART_RFID_Handler(void)
     {
         elements=0;
         data_num_bytes=0;
-        rfid_handlder_exit_flag = 1;
+        rfid_handler_exit_flag = 1;
     }
 }
 
@@ -384,19 +382,20 @@ void vRFIDTask(void *pvParameters)
     //when received, print the received infromation
     //push information to the logger via IPC
     //put back into seek mode, wait for another chip read
-    uint8_t i = 0;
-    //UARTprintf("\nafter a delay, should be receiving rfid data\n");
+    //uint8_t i = 0;
     const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
     vTaskDelay(xDelay);
 
+    //RFID_reset();
+    //RFID_setbaud(115200);
+    RFID_seek();
 
-    RFID_reset();
-    for(i=0; i<12; i++)
+
+
+    while(1)
     {
-        UARTprintf("data from task[%d]: %02x\n",i,rfid_data_recv[i]);
+        RFID_seek();
     }
-
-    while(1);
 }
 
 /**
@@ -528,53 +527,7 @@ void vHBTimerCallback(void* pvParameters)
 }
 
 
-void vSocketTask(void *pvParameters)
-{
-    printf("inside socket task\n");
 
-
-    //initializing the MAC layer for interface to the TPC/IP layer
-    //xNetworkInterfaceInitialise();
-
-    /*Socket_t xclientHandle;
-    struct freertos_sockaddr xclientAddress;
-    size_t xbytesSent = 0;
-    size_t xbytesTOSEND = 256;
-    uint16_t port1 = 8090;
-    char ipc_mess[xbytesTOSEND];
-    sprintf(ipc_mess,"%s", "This message is bound for the BBG SERVER!!");
-
-    xclientAddress.sin_port = FreeRTOS_htons(port1);
-    //might need to use FreeRTOS_inet_addr() to conform to Berkley sockets
-    xclientAddress.sin_addr = FreeRTOS_inet_addr_quick(192, 168,7,2);
-
-    xclientHandle = FreeRTOS_socket(FREERTOS_AF_INET,FREERTOS_SOCK_STREAM,FREERTOS_IPPROTO_TCP);
-    if(xclientHandle == FREERTOS_INVALID_SOCKET)
-    {
-        printf("Error Creating Socket: %s\n", "FREERTOS_INVALID_SOCKET");
-    }
-
-    if(FreeRTOS_connect(xclientHandle, &xclientAddress, sizeof(xclientAddress))==0)
-    {
-        xbytesSent = FreeRTOS_send(xclientHandle, &ipc_mess, xbytesTOSEND,0);
-        if(xbytesSent == -pdFREERTOS_ERRNO_ENOTCONN)
-        {
-            printf("error on send: %s\n", "FREERTOS_ERRNO_ENOTCONN");
-        }
-    }
-
-    FreeRTOS_shutdown(xclientHandle, FREERTOS_SHUT_RDWR);
-    while(FreeRTOS_recv(xclientHandle, ipc_mess, xbytesTOSEND,0) >= 0)
-    {
-        //vTaskDelay(pdTICKS_TO_MS(250));
-    }
-    FreeRTOS_closesocket(xclientHandle);*/
-
-    while(1);
-
-
-
-}
 
 
 

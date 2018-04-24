@@ -7,22 +7,25 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#define RECV_BUFF_LENGTH    32
 
 #ifndef RFID_SM130_h_
 #define RFID_SM130_h_
 
-char rfid_data_recv[32];
+extern uint8_t rfid_handler_exit_flag;
+
+char rfid_data_recv[RECV_BUFF_LENGTH];
 
 void RFID_reset();
-
-void RFID_firmware();
 
 void RFID_seek();
 
 void RFID_antPWR();
 
-void RFID_setbaud();
-
-
+/*if using this function, you will not know if the changes have taken affect
+ * until you change the UART baud rate to the new overall rate
+ * and then reset the system
+ */
+void RFID_setbaud(uint32_t newBaud);
 
 #endif /*_RFID_SM130_h_*/

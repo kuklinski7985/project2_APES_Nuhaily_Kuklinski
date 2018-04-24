@@ -57,7 +57,7 @@
 #define QUEUE_ELEMENT_SIZE_MAX  256
 #define QUEUE_LENGTH_MAX        8
 #define DEFAULT_BUFFER_SIZE     256
-#define UARTBAUDRATE            19200
+#define UARTBAUDRATE            115200
 
 void ConfigureUART();
 void vPrintTerminalMenu(void);
@@ -75,16 +75,17 @@ void vHBTimerCallback(void* pvParameters);
 // Interrupt handlers
 void UARTTerminalIntHandler(void);
 
+//RFID Functions
 void UART_RFID_Handler(void);
 void UARTRFID_send(char * RFID_buffer, uint32_t byteCount);
-void vSocketTask(void *pvParameters);
+void vRFIDTask(void *pvParameters);
 
 int xInitThreads(void);
-void vRFIDTask(void *pvParameters);
+
 
 //value for the data read from rfid
 extern char rfid_data_recv[32];
-uint8_t rfid_handlder_exit_flag;
+uint8_t rfid_handler_exit_flag;
 
 
 // Timer callbacks

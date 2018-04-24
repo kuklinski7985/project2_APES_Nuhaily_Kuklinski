@@ -16,6 +16,17 @@
 
 BaseType_t xNetworkInterfaceInitialise( void )
 {
+    const char socketTaskName[11] = "Socket Task";
+    xTaskCreate(vSocketTask, socketTaskName, 512, NULL, 1, &socketTask);
+    vTaskDelay(200);
+    eth_MAC_init();
+
+    return pdPASS;
+}
+
+
+void eth_MAC_init( void )
+{
     uint32_t ui32User0, ui32User1, ui32Loop;
     uint8_t ui8PHYAddr;
     uint8_t pui8MACAddr[6];
@@ -118,7 +129,6 @@ BaseType_t xNetworkInterfaceInitialise( void )
     EMACIntEnable(EMAC0_BASE, EMAC_INT_RECEIVE);
 
     FreeRTOS_IPInit( ucIPAddress, ucNetMask, ucGatewayAddress, ucDNSServerAddress, pui8MACAddr);// ucMACAddress);
-    return (pdPASS);
 }
 
 void InitDescriptors(uint32_t ui32Base)
@@ -214,11 +224,16 @@ void EthernetIntHandler(void)
     //check to see if an RX interrupt has occurred
     if(ui32Temp & EMAC_INT_RECEIVE)
     {
+        // doesn't actually process packet, this should just move the fifo over incrementing the descriptor
         ProcessReceivedPacket();
     }
+
+
+    // portYIELDFromISR(the task of interest)
+    // defer the processing of the packet to a task
 }
 
-/*static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
+static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
 {
     //wait for transmit descriptor to free up
     while(g_psTxDescriptor[g_ui32TxDescIndex].ui32CtrlStatus & DES0_TX_CTRL_OWN)
@@ -245,7 +260,7 @@ void EthernetIntHandler(void)
     //return the number of bytes sent
     return(i32BufLen);
 
-}*/
+}
 
 void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
 {
@@ -292,14 +307,62 @@ void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
         }
 }
 
+BaseType_t xNetworkInterfaceOutput( NetworkBufferDescriptor_t * const pxDescriptor, BaseType_t xReleaseAfterSend )
+{
+
+    //SendData( pxDescriptor->pucBuffer, pxDescriptor->xDataLength );
+
+    if( xReleaseAfterSend != pdFALSE )
+    {
+        vReleaseNetworkBufferAndDescriptor( pxDescriptor );
+    }
+    return pdTRUE;
+}
+
+void vSocketTask(void *pvParameters)
+{
+    printf("inside socket task\n");
 
 
+    //initializing the MAC layer for interface to the TPC/IP layer
 
+    /*Socket_t xclientHandle;
+    struct freertos_sockaddr xclientAddress;
+    size_t xbytesSent = 0;
+    size_t xbytesTOSEND = 256;
+    uint16_t port1 = 8090;
+    char ipc_mess[xbytesTOSEND];
+    sprintf(ipc_mess,"%s", "This message is bound for the BBG SERVER!!");
 
+    xclientAddress.sin_port = FreeRTOS_htons(port1);
+    //might need to use FreeRTOS_inet_addr() to conform to Berkley sockets
+    xclientAddress.sin_addr = FreeRTOS_inet_addr_quick(192, 168,7,2);
 
+    xclientHandle = FreeRTOS_socket(FREERTOS_AF_INET,FREERTOS_SOCK_STREAM,FREERTOS_IPPROTO_TCP);
+    if(xclientHandle == FREERTOS_INVALID_SOCKET)
+    {
+        printf("Error Creating Socket: %s\n", "FREERTOS_INVALID_SOCKET");
+    }
 
+    if(FreeRTOS_connect(xclientHandle, &xclientAddress, sizeof(xclientAddress))==0)
+    {
+        xbytesSent = FreeRTOS_send(xclientHandle, &ipc_mess, xbytesTOSEND,0);
+        if(xbytesSent == -pdFREERTOS_ERRNO_ENOTCONN)
+        {
+            printf("error on send: %s\n", "FREERTOS_ERRNO_ENOTCONN");
+        }
+    }
 
+    FreeRTOS_shutdown(xclientHandle, FREERTOS_SHUT_RDWR);
+    while(FreeRTOS_recv(xclientHandle, ipc_mess, xbytesTOSEND,0) >= 0)
+    {
+        //vTaskDelay(pdTICKS_TO_MS(250));
+    }
+    FreeRTOS_closesocket(xclientHandle);*/
 
+    while(1);
+
+}
 
 
 

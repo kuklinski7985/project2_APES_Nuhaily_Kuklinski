@@ -57,6 +57,9 @@
 #define NUM_TX_DESCRIPTORS 3
 #define NUM_RX_DESCRIPTORS 3
 
+TaskHandle_t socketTask;
+
+
 extern uint32_t f_sysclk;
 
 tEMACDMADescriptor g_psRxDescriptor[NUM_TX_DESCRIPTORS];
@@ -71,14 +74,18 @@ uint8_t g_ppui8RxBuffer[NUM_RX_DESCRIPTORS][RX_BUFFER_SIZE];
 /*initializes the MAC and PHY layers for interface to the TCP/IP layer*/
 BaseType_t xNetworkInterfaceInitialise( void );
 
+void eth_MAC_init( void );
+
 /*transmit a packet from the supplied buffer, called directly from the application
  * pui8Buf points to ethernet frame to send, i32BufLen number of bytes in the frame
  */
-//static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen);
+static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen);
 
-//BaseType_t xNetworkInterfaceOutput( NetworkBufferDescriptor_t * const pxDescriptor, BaseType_t xReleaseAfterSend );
+BaseType_t xNetworkInterfaceOutput( NetworkBufferDescriptor_t * const pxDescriptor, BaseType_t xReleaseAfterSend );
 
 //void vNetworkInterfaceAllocateRAMToBuffers(NetworkBufferDescriptor_t xDescriptors[ ipconfigNUM_NETWORK_BUFFERS ] );
+//void vNetworkInterfaceAllocateRAMToBuffers(NetworkBufferDescriptor_t xDescriptors[ ipconfigNUM_NETWORK_BUFFER_DESCRIPTORS ] );
+
 
 /*Initializes the transmit and receive DMA descriptors*/
 void InitDescriptors(uint32_t ui32Base);
@@ -93,6 +100,7 @@ void EthernetIntHandler(void);
 
 void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent );
 
+void vSocketTask(void *pvParameters);
 
 
 #endif /*_networkinterface_h_*/
