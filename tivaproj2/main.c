@@ -386,7 +386,7 @@ void vRFIDTask(void *pvParameters)
     const TickType_t xDelay = 1000 / portTICK_PERIOD_MS;
     vTaskDelay(xDelay);
 
-    //RFID_reset();
+    RFID_reset();
     //RFID_setbaud(115200);
     RFID_seek();
 
@@ -394,7 +394,7 @@ void vRFIDTask(void *pvParameters)
 
     while(1)
     {
-        RFID_seek();
+        //RFID_seek();
     }
 }
 

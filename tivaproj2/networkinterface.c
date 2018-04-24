@@ -105,7 +105,7 @@ void eth_MAC_init( void )
     {
     }
 
-    //MAC address filtering options.  receive all broadcase and multicase packets along with those address for us
+    //MAC address filtering options.  receive all broadcast and multicast packets along with those address for us
     //?????is this necessary for our application????????
     EMACFrameFilterSet(EMAC0_BASE, (EMAC_FRMFILTER_SADDR | EMAC_FRMFILTER_PASS_MULTICAST | EMAC_FRMFILTER_PASS_NO_CTRL));
 
@@ -233,6 +233,8 @@ void EthernetIntHandler(void)
     // defer the processing of the packet to a task
 }
 
+//this is the same at eth_tx from the class slides
+//PacketTransmit(pxDescriptor->pucEthernetBuffer, pxDscriptor->xDataLength)
 static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
 {
     //wait for transmit descriptor to free up

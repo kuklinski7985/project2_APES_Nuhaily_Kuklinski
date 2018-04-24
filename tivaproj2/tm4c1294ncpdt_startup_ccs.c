@@ -48,6 +48,7 @@ extern void vPortSVCHandler(void);
 extern void xPortSysTickHandler(void);
 extern void UARTTerminalIntHandler(void);
 extern void UART_RFID_Handler(void);
+extern void EthernetIntHandler(void);
 
 
 //*****************************************************************************
@@ -131,7 +132,7 @@ void (* const g_pfnVectors[])(void) =
     IntDefaultHandler,                      // I2C1 Master and Slave
     IntDefaultHandler,                      // CAN0
     IntDefaultHandler,                      // CAN1
-    IntDefaultHandler,                      // Ethernet
+    EthernetIntHandler,                      // Ethernet
     IntDefaultHandler,                      // Hibernate
     IntDefaultHandler,                      // USB0
     IntDefaultHandler,                      // PWM Generator 3
