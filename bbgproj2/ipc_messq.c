@@ -55,8 +55,25 @@ void shuffler_king()
         switch(ipc_msg.source)
         {
           case IPC_SOCKET:
+          case IPC_UART:
             // messages that have come from the socket, check the payload and process according to its contents
-            // 
+            // handle UART messages the same as socket for now
+            // switch on the comm_t message type
+            switch(ipc_msg.comm_type)
+            {
+              case COMM_INFO:
+                // some status info was received from the client, format, display, and log the payload
+                strcpy(log_str, ipc_msg.timestamp);
+                strcat(log_str, "INFO: ");
+                strcat(log_str, ipc_msg.payload);
+                strcat(log_str, "\n");
+                printf("%s", log_str);
+                mq_send(log_queue, log_str, strlen(log_str), 0);
+                break;
+              case COMM_NONE:
+              default:
+                break;
+            }
             break;
         }
       }
@@ -69,11 +86,23 @@ void shuffler_king()
       break;
 
     case IPC_SOCKET:
+    case IPC_UART:
       // convert ipc message type to comm message type
       strcpy(comm_msg.timestamp, ipc_msg.timestamp);
-      comm_msg.type = COMM_NONE; // determine type based on packet contents (payload?)
+      comm_msg.type = ipc_msg.comm_type; // determine type based on packet contents (payload?)
       strcpy(comm_msg.payload, ipc_msg.payload);
+      strcpy(socket_str, "");
       build_comm_msg(comm_msg, socket_str);
+      if(ipc_msg.destination == IPC_UART)
+      {
+        // write to UART1
+       // printf("Written to UART1: %s\n", socket_str);
+        write(uart_client, socket_str, strlen(socket_str) );
+      }
+      else if (ipc_msg.destination == IPC_SOCKET)
+      {
+        // write to socket
+      }
       //mq_send(socket_queue, socket_str, strlen(socket_str), 0);
       break;
 
@@ -226,11 +255,11 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
   {
     case(MSG_DATA):
       strcpy(loglevel, "DATA: ");
-      if(msg.source == IPC_LIGHT)
+      if(msg.source == IPC_NONE)//IPC_LIGHT) // reassigned temporarily
       {
         sprintf(tmp, "%s%s%s%s%s.\n", msg.timestamp, loglevel, "Light sensor reads: ", msg.payload, " lux");  
       }
-      else if(msg.source == IPC_TEMP)
+      else if(msg.source == IPC_MAIN)//IPC_TEMP)
       {
         sprintf(tmp, "%s%s%s%s.\n", msg.timestamp, loglevel, "Temp sensor reads: ", msg.payload);
       }
@@ -240,12 +269,6 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
       strcpy(loglevel, "INFO: "); 
       switch(msg.source)
       {
-        case(IPC_LIGHT):
-          strcpy(sourceid, "Light sensor message: ");
-          break;
-        case(IPC_TEMP):
-          strcpy(sourceid, "Temp sensor message: ");
-          break;
         case(IPC_LOG):
           strcpy(sourceid, "Logger message: ");
           break;
@@ -267,12 +290,6 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
         strcpy(loglevel, "ERROR: ");
         switch(msg.source)
         {
-          case(IPC_LIGHT):
-            strcpy(sourceid, "Light sensor message: ");
-            break;
-          case(IPC_TEMP):
-            strcpy(sourceid, "Temp sensor message: ");
-            break;
           case(IPC_LOG):
             strcpy(sourceid, "Logger message: ");
             break;

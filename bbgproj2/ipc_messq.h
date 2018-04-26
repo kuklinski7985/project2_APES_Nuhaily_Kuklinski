@@ -43,11 +43,6 @@ extern struct mq_attr ipc_attr;
 
 extern mqd_t ipc_queue;
 
-
-
-
-
-
 void ipc_queue_init();
 void shuffler_king();
 void log_queue_init();

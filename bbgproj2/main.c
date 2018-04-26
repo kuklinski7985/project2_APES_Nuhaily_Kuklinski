@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
 /***joining threads, closing files, and removing queues*****/
   strcpy(ipc_msg.timestamp, getCurrentTimeStr());
   ipc_msg.type = MSG_INFO;
-  ipc_msg.source = IPC_TEMP;
+  ipc_msg.source = IPC_MAIN;
   ipc_msg.destination = IPC_LOG;
   ipc_msg.src_pid = getpid();
   strcpy(ipc_msg.payload, "Main thread exiting.\n");
@@ -198,7 +198,7 @@ void* heartbeat()
 
   strcpy(ipc_msg.timestamp, getCurrentTimeStr());
   ipc_msg.type = MSG_INFO;
-  ipc_msg.source = IPC_TEMP;
+  ipc_msg.source = IPC_HB;
   ipc_msg.destination = IPC_LOG;
   ipc_msg.src_pid = getpid();
   strcpy(ipc_msg.payload, "Heartbeat thread exiting.\n");
@@ -219,7 +219,7 @@ void* userterminal()
   // if data is found, format it to an ipc message type
   // push it to the ipc queue
   char buf[DEFAULT_BUF_SIZE];
-
+  ipcmessage_t ipc_buf;
 
 
   while(bizzounce == 0)
@@ -236,8 +236,25 @@ void* userterminal()
       {
         case 'm':
         case 'M':
+          // would it be better if main did this display?
           printTerminalMenu();
           break;
+
+        case 'c':
+        case 'C':
+          // construct an ipc item to send a string over uart1
+          strcpy(ipc_buf.timestamp, getCurrentTimeStr() );
+          ipc_buf.source = IPC_USER;
+          ipc_buf.destination = IPC_UART;
+          ipc_buf.type = MSG_QUERY;
+          ipc_buf.comm_type = COMM_QUERY;
+          ipc_buf.src_pid = getpid();
+          strcpy(ipc_buf.payload, "Test string.\n");
+          strcpy(buf, "");
+          build_ipc_msg(ipc_buf, buf);
+          mq_send(ipc_queue, buf, strlen(buf), 0);
+          break;
+
         default:
           printf("Invalid entry.\n");
           break;
@@ -251,6 +268,7 @@ void printTerminalMenu()
 {
   printf("\nBBG Server Terminal Menu:\n");
   printf("(M) Print this menu\n");
+  printf("(C) Send a string to the client at UART1\n");
 }
 
 void printTerminalPrompt()

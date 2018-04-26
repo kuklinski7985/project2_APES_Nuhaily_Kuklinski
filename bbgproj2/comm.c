@@ -64,10 +64,20 @@ void* commthreadrx()
       strcpy(ipc_struct.timestamp, msg_struct.timestamp);
       // types:
       // COMM_NONE, COMM_QUERY, COMM_DATA, COMM_INFO, COMM_CMD, COMM_ERROR, COMM_HB 
-      ipc_struct.type = msg_struct.type;
+      ipc_struct.comm_type = msg_struct.type;
       strcpy(ipc_struct.payload, msg_struct.payload);
-      strcpy(msg_buf, "");
+      strcpy(msg_buf, "");  // clear the buffer so we can reuse it
+      
+      // now build the surrounding IPC struct attributes relevant to a message coming from the TIVA
+      ipc_struct.source = IPC_UART;
+      ipc_struct.destination = IPC_MAIN;
+      ipc_struct.type = IPC_NONE; // we need to determine the type based on what's in the payload I think?
+                            // no, let main determine what to do, just pass the payload and don't switch on type
+      ipc_struct.src_pid = getpid();
+
+      // build IPC message string from assembled IPC message struct
       build_ipc_msg(ipc_struct, msg_buf);
+      
       // put on ipc queue
       mq_send(ipc_queue, msg_buf, strlen(msg_buf), 0);
     }

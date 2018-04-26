@@ -39,13 +39,6 @@ typedef int uart_t; // uart port file descriptor type
 // if the client receives a message it was obiviously from the server
 // I guess if we have multiple clients we could have the server know which client it was by identifying what port it received it from
 
-// struct to define messages passed around to all parts of the system
-typedef struct comm_msg {
-  char timestamp[10];
-  comm_t type;                          // message identifier
-  char payload[DEFAULT_BUFFER_SIZE];    // message to transmit
-} comm_msg_t;
-
 //uart_t user_terminal;
 uart_t uart_client;//[3]; // eventually expand to array of clients somehow
 

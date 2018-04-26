@@ -10,7 +10,7 @@ typedef enum{
 
 /*locations messages can be sent to and received from*/
 typedef enum{
-  IPC_NONE, IPC_LOG, IPC_MAIN, IPC_SOCKET, IPC_USER, IPC_HB, IPC_TEMP, IPC_LIGHT
+  IPC_NONE, IPC_LOG, IPC_MAIN, IPC_SOCKET, IPC_USER, IPC_HB, IPC_UART
 } location_t;
 
 // Server-client message types
@@ -28,12 +28,19 @@ typedef struct data {
     uint32_t data;
 } data_t;
 
+// struct to define messages passed around to all parts of the system
+typedef struct comm_msg {
+  char timestamp[10];
+  comm_t type;                          // message identifier
+  char payload[DEFAULT_BUF_SIZE];    // message to transmit
+} comm_msg_t;
+
 // right now it doesn't know what comm_t is because I can't include comm.h - the include becomes circular since comm.h needs ipc_messq.h
 // how do I handle this? I want to keep a data element of type comm_t in this struct
 /*struct to define messages passed around to all parts of the system*/
 typedef struct ipcmessage {
   char timestamp[10];
-  message_t type;                   //message identifier
+  message_t type;                   // message identifier
   comm_t comm_type;                 // inter-board message type
   location_t source;                // where message originates from
   pid_t src_pid;                    // pid of process creating the message
