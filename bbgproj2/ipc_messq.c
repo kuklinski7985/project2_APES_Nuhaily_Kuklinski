@@ -33,45 +33,60 @@ void shuffler_king()
   // Determine where item wants to go and process accordingly
   switch(ipc_msg.destination) 
   {
-      case(IPC_MAIN): // Items destined for main
-        if(ipc_msg.type == MSG_HB)
+    case(IPC_MAIN): // Items destined for main
+      if(ipc_msg.type == MSG_HB)
+      {
+        switch(ipc_msg.source)
         {
-          switch(ipc_msg.source)
-          {
-            case(IPC_LOG):
-              log_hb_count = 0;
-              log_hb_err = 0;
-              break;              
-            default:
-              break;
-          }
+          case IPC_LOG:
+            log_hb_count = 0;
+            log_hb_err = 0;
+            break;              
+          default:
+            break;
         }
-        break;
+      }
+
+      // if not a hb signal, unpack the rest
+      else
+      {
+        // assuming there's something in the payload that main needs to do something about,
+        // e.g. a message from the socket or from the user
+        switch(ipc_msg.source)
+        {
+          case IPC_SOCKET:
+            // messages that have come from the socket, check the payload and process according to its contents
+            // 
+            break;
+        }
+      }
+      break;
 
         // Items to be pushed to log queue. Display to terminal and send to log
-      case(IPC_LOG):
-        manage_ipc_msg(ipc_msg, log_str);
-        mq_send(log_queue, log_str, strlen(log_str), 0);
-        break;
+    case IPC_LOG:
+      manage_ipc_msg(ipc_msg, log_str);
+      mq_send(log_queue, log_str, strlen(log_str), 0);
+      break;
 
-      case(IPC_SOCKET):
-        // convert ipc message type to comm message type
-        strcpy(comm_msg.timestamp, ipc_msg.timestamp);
-        comm_msg.type = COMM_NONE; // determine type based on packet contents (payload?)
-        strcpy(comm_msg.payload, ipc_msg.payload);
-        build_comm_msg(comm_msg, socket_str);
-        mq_send(socket_queue, socket_str, strlen(socket_str), 0);
-        break;
+    case IPC_SOCKET:
+      // convert ipc message type to comm message type
+      strcpy(comm_msg.timestamp, ipc_msg.timestamp);
+      comm_msg.type = COMM_NONE; // determine type based on packet contents (payload?)
+      strcpy(comm_msg.payload, ipc_msg.payload);
+      build_comm_msg(comm_msg, socket_str);
+      //mq_send(socket_queue, socket_str, strlen(socket_str), 0);
+      break;
 
-      // General user-use items
-      case(IPC_USER):
-        mq_send(log_queue, log_str, strlen(log_str), 0);
-        break;
+    // General user-use items
+    case IPC_USER:
+      mq_send(log_queue, log_str, strlen(log_str), 0);
+      break;
     
-      // Type-less or erroneous items
-      case(IPC_NONE):
-      default:
-        printf("Destination %d not valid\n", ipc_msg.destination);
+    // Type-less or erroneous items
+    case IPC_NONE:
+    default:
+      printf("Destination %d not valid\n", ipc_msg.destination);
+      break;
   }
 }
 
@@ -279,9 +294,12 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
       break;
   }
   strcpy(log_str, tmp);
+  
+  // disabled display of log messages for now
+  /*
   if(msg.type != IPC_USER)
   {
     printf("%s", log_str);
-  }
+  }*/
 
 }

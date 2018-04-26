@@ -25,6 +25,7 @@
 #include <errno.h>
 #include "logger.h"
 #include "myusrled.h"
+#include "prj2types.h"
 
 #ifndef ipc_messq_h_
 #define ipc_messq_h_
@@ -42,26 +43,10 @@ extern struct mq_attr ipc_attr;
 
 extern mqd_t ipc_queue;
 
-/*types of ipc messages that are possible*/
-typedef enum{
-  MSG_NONE, MSG_QUERY, MSG_DATA, MSG_INFO, MSG_TERMINATE, MSG_ERROR, MSG_HB
-} message_t;
 
-/*locations messages can be sent to and received from*/
-typedef enum{
-  IPC_NONE, IPC_LOG, IPC_MAIN, IPC_SOCKET, IPC_USER, IPC_HB
-} location_t;
 
-/*struct to define messages passed around to all parts of the system*/
-typedef struct ipcmessage {
-  char timestamp[10];
-  message_t type;                   //message identifier
-  comm_t comm_type;
-  location_t source;                //where message originates from
-  pid_t src_pid;                    //pid of process creating the message
-  location_t destination;           //final destination for message
-  char payload[DEFAULT_BUF_SIZE];   // message to transmit
-} ipcmessage_t;
+
+
 
 void ipc_queue_init();
 void shuffler_king();

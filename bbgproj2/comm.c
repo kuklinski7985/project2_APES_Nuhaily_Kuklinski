@@ -3,12 +3,77 @@
 * @brief fxn definition for queue creation and use
 * @author Andrew Kuklinski and Adam Nuhaily
 * @date 03/11/2018
+* 
+* Used http://man7.org/linux/man-pages/man3/tcsetattr.3p.html as reference
+* http://man7.org/linux/man-pages/man3/cfsetispeed.3p.html
+http://man7.org/linux/man-pages/man3/termios.3.html
+* Used https://stackoverflow.com/questions/6947413/how-to-open-read-and-write-from-serial-port-in-c
+*  as reference
 **/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include "comm.h"
+
+extern int bizzounce;
+
+int init_comm()
+{
+  // initialize UART for inter-board communication
+  struct termios term_attr;
+  uart_client = open("/dev/ttyO1", O_RDWR);
+  tcgetattr(uart_client, &term_attr);
+  // do an error check on the above
+
+  // set terminal baud rates
+  cfsetispeed(&term_attr, B115200);
+  cfsetospeed(&term_attr, B115200);
+
+  // set non-blocking
+  term_attr.c_cc[VMIN] = 0;
+  term_attr.c_cc[VTIME] = 10;  // set 1sec timeout (10 deciseconds per struct termios)
+
+  // set baud rate etc
+  tcsetattr(uart_client, TCSANOW, &term_attr);
+  // do an error check on above
+  
+
+
+  return 0;
+}
+
+void* commthreadrx()
+{
+  // initialize comm (uart rx from client)
+  // start a while loop to monitor input from uart1 (inter-board comm)
+  char msg_buf[DEFAULT_BUF_SIZE]; // may need to be bigger to accomodate large image transfer chunks
+  comm_msg_t msg_struct;
+  ipcmessage_t ipc_struct;
+
+  init_comm();
+
+  while(bizzounce == 0)
+  {
+    read(uart_client, msg_buf, DEFAULT_BUF_SIZE);
+    if(strlen(msg_buf) > 0)
+    {
+      // process from comm type to ipc message type
+      decipher_comm_msg(msg_buf, &msg_struct);
+      strcpy(ipc_struct.timestamp, msg_struct.timestamp);
+      // types:
+      // COMM_NONE, COMM_QUERY, COMM_DATA, COMM_INFO, COMM_CMD, COMM_ERROR, COMM_HB 
+      ipc_struct.type = msg_struct.type;
+      strcpy(ipc_struct.payload, msg_struct.payload);
+      strcpy(msg_buf, "");
+      build_ipc_msg(ipc_struct, msg_buf);
+      // put on ipc queue
+      mq_send(ipc_queue, msg_buf, strlen(msg_buf), 0);
+    }
+    // no need for else statement? nothing was read
+  }  
+}
 
 void decipher_comm_msg(char* comm_msg, comm_msg_t* msg_struct)
 {
@@ -80,7 +145,7 @@ void decipher_comm_data(data_t comm_data, char* payload)
   //  cause of the seg faults
   if(tmp1[0] != '\0')
   {
-    comm_data->sensor_type = (sensor_t)atoi(tmp1);
+    comm_data.sensor_type = (sensor_t)atoi(tmp1);
   }
 
   // determine sensor type
@@ -93,7 +158,7 @@ void decipher_comm_data(data_t comm_data, char* payload)
   //  cause of the seg faults
   if(tmp2[0] != '\0')
   {
-    comm_data->sensorid = (int)atoi(tmp2);
+    comm_data.sensorid = (int)atoi(tmp2);
   }
 
   // determine sensor type
@@ -106,7 +171,7 @@ void decipher_comm_data(data_t comm_data, char* payload)
   //  cause of the seg faults
   if(tmp3[0] != '\0')
   {
-    comm_data->data = (uint32_t)atoi(tmp3);
+    comm_data.data = (uint32_t)atoi(tmp3);
   }
 
 }
@@ -115,7 +180,7 @@ void decipher_comm_data(data_t comm_data, char* payload)
  *
  */
 
-void build_comm_data(char* payload, data_t* comm_data)
+void build_comm_data(char* payload, comm_msg_t comm_data)
 {
   char tmp[DEFAULT_BUFFER_SIZE];
 

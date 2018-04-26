@@ -33,10 +33,24 @@ int main(int argc, char* argv[])
     return -1;
   }
 
-  checking = pthread_create(&hb_thread, &attr, heartbeat,(void*)input1);
+  checking = pthread_create(&hb_thread, &attr, heartbeat, (void*)input1);
   if(checking)
   {
     fprintf(stderr, "Error creating heartbeat thread");
+    return -1;
+  }
+
+  checking = pthread_create(&comm_thread, &attr, commthreadrx, (void*)input1);
+  if(checking)
+  {
+    fprintf(stderr, "Error creating comm rx thread");
+    return -1;
+  }
+
+  checking = pthread_create(&terminal_thread, &attr, userterminal, (void*)input1);
+  if(checking)
+  {
+    fprintf(stderr, "Error creating user terminal thread");
     return -1;
   }
 
@@ -78,6 +92,11 @@ int main(int argc, char* argv[])
  /******monitors the main message queue for new messages and distributes accordingly******/
  /******also provides the system heartbeat for the sensors*******/
   mq_getattr(ipc_queue, &ipc_attr);
+
+  // Print user terminal menu
+  printTerminalMenu();
+  printTerminalPrompt();
+
   while(bizzounce == 0)
   {
     while(ipc_attr.mq_curmsgs > 0)
@@ -100,6 +119,7 @@ int main(int argc, char* argv[])
         build_ipc_msg(ipc_msg, msg_str);
         mq_send(ipc_queue, msg_str, strlen(msg_str), 0);
         memset(msg_str, 0, strlen(msg_str));
+        // blink an LED?
     }
     mq_getattr(ipc_queue, &ipc_attr);
   }
@@ -117,9 +137,9 @@ int main(int argc, char* argv[])
   mq_close(ipc_queue);
 
   if(mq_unlink("/ipcmain") == -1)
-    {
-      	printf("unlink error: %s\n", strerror(errno));
-    }
+  {
+      printf("unlink error: %s\n", strerror(errno));
+  }
 
   pthread_join(socket_thread,NULL);
   
@@ -190,4 +210,50 @@ void* heartbeat()
 void hb_warn(union sigval arg)
 {
   log_hb_count++;
+}
+
+void* userterminal()
+{
+  // no need for any open / read / write here because the user terminal is defined as UART0
+  // infinite while loop checking scanf()
+  // if data is found, format it to an ipc message type
+  // push it to the ipc queue
+  char buf[DEFAULT_BUF_SIZE];
+
+
+
+  while(bizzounce == 0)
+  {
+    if(scanf("%s", buf) == -1)
+    {
+      printf("Error reading from terminal.\n");
+      // might be better to form a message and put it on the ipc queue so main can do this display
+    }
+
+    else
+    {
+      switch(buf[0])
+      {
+        case 'm':
+        case 'M':
+          printTerminalMenu();
+          break;
+        default:
+          printf("Invalid entry.\n");
+          break;
+      }
+    }
+    printTerminalPrompt();
+  }
+}
+
+void printTerminalMenu()
+{
+  printf("\nBBG Server Terminal Menu:\n");
+  printf("(M) Print this menu\n");
+}
+
+void printTerminalPrompt()
+{
+    printf("Enter command (M for menu): ");
 }

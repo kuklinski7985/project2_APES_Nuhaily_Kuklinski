@@ -4,7 +4,7 @@ OBJS = $(SOURCES:.c=.o)
 OBJS_SOCK =
 IMP = $(SOURCES:.c=.i)
 IMP_SOCK = $(SOURCES_SOCK:.c=.i)
-INCLUDES = main.h
+INCLUDES = main.h prj2types.h
 
 CC = arm-linux-gnueabihf-gcc
 #CC = gcc

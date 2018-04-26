@@ -18,6 +18,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <mqueue.h>
+#include <termios.h>
 #include "logger.h"
 #include "ipc_messq.h"
 #include "myusrled.h"
@@ -33,6 +34,8 @@ typedef struct input_struct{
 pthread_t log_thread;
 pthread_t socket_thread;      //thread for the remote socket
 pthread_t hb_thread;          //heartbeat sensor thread
+pthread_t comm_thread;
+pthread_t terminal_thread;
 pthread_attr_t attr;         //standard attributes for pthread
 
 file_t logfile;
@@ -50,3 +53,7 @@ int log_hb_err;
 void* heartbeat();
 void hb_warn(union sigval arg);
 void hb_hb_fn(union sigval arg);
+
+void* userterminal();
+void printTerminalMenu();
+void printTerminalPrompt();

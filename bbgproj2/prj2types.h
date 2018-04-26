@@ -18,7 +18,7 @@ typedef enum {
   COMM_NONE, COMM_QUERY, /*COMM_RESPONSE, */COMM_DATA, COMM_INFO, COMM_CMD, COMM_ERROR, COMM_HB 
 } comm_t;
 
-typedef enum{
+typedef enum {
     DATA_NONE, DATA_RFID, DATA_IMG
 } sensor_t;
 

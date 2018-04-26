@@ -5,22 +5,35 @@
 * @date 03/11/2018
 **/
 
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <pthread.h>
+#include <linux/kernel.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <signal.h>
+#include <time.h>
+#include <stdarg.h>
+#include <ctype.h>
+#include <mqueue.h>
+#include <errno.h>
+#include "prj2types.h"
+#include "ipc_messq.h"
+
+#ifndef COMM_H_
+#define COMM_H_
+
 #define DEFAULT_BUFFER_SIZE     256
 
-// Server-client message types
-typedef enum {
-  COMM_NONE, COMM_QUERY, /*COMM_RESPONSE, */COMM_DATA, COMM_INFO, COMM_CMD, COMM_ERROR, COMM_HB 
-} comm_t;
 
-typedef enum{
-    DATA_NONE, DATA_RFID, DATA_IMG
-} sensor_t;
 
-typedef struct data {
-    sensor_t sensor_type;
-    int sensorid;
-    uint32_t data;
-} data_t;
+typedef int uart_t; // uart port file descriptor type
 
 // we don't really need a location type do we? if the server is sending a message it's obviously going to the client
 // if the client receives a message it was obiviously from the server
@@ -33,10 +46,17 @@ typedef struct comm_msg {
   char payload[DEFAULT_BUFFER_SIZE];    // message to transmit
 } comm_msg_t;
 
+//uart_t user_terminal;
+uart_t uart_client;//[3]; // eventually expand to array of clients somehow
+
 void decipher_comm_msg(char* comm_msg, comm_msg_t* msg_struct);
 void build_comm_msg(comm_msg_t msg_struct, char* comm_msg);
 
 void decipher_comm_data(data_t comm_data, char* payload);
-void build_comm_data(char* payload, data_t* comm_data);
+void build_comm_data(char* payload, comm_msg_t comm_data);
+
+void* commthreadrx();
 
 // message format (if it contains sensor data): <type>\n<timestamp>\n<data_t>|<payload>
+
+#endif
