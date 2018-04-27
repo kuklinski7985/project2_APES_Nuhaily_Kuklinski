@@ -23,25 +23,90 @@ int init_comm()
 {
   // initialize UART for inter-board communication
   struct termios term_attr;
-  uart_client = open("/dev/ttyO1", O_RDWR);
+  uart_client = open("/dev/ttyO1", O_RDWR | O_NOCTTY | O_SYNC);
+
   tcgetattr(uart_client, &term_attr);
   // do an error check on the above
 
   // set terminal baud rates
-  cfsetispeed(&term_attr, B115200);
-  cfsetospeed(&term_attr, B115200);
+//  cfsetispeed(&term_attr, B115200);
+//  cfsetospeed(&term_attr, B115200);
+
+  cfsetispeed(&term_attr, B9600);
+  cfsetospeed(&term_attr, B9600);
 
   // set non-blocking
   term_attr.c_cc[VMIN] = 0;
   term_attr.c_cc[VTIME] = 10;  // set 1sec timeout (10 deciseconds per struct termios)
 
+  term_attr.c_iflag &= ~IGNBRK;         // disable break processing
+        term_attr.c_lflag = 0;                // no signaling chars, no echo,
+                                        // no canonical processing
+        term_attr.c_oflag = 0;                // no remapping, no delays
+        term_attr.c_cc[VMIN]  = 0;            // read doesn't block
+        
+
+        term_attr.c_iflag =  IXOFF; // shut off xon/xoff ctrl
+
+        term_attr.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
+                                        // enable reading
+        term_attr.c_cflag &= ~(PARENB | PARODD);      // shut off parity
+        term_attr.c_cflag &= ~CSTOPB;
+        term_attr.c_cflag &= ~CRTSCTS;
+
   // set baud rate etc
   tcsetattr(uart_client, TCSANOW, &term_attr);
   // do an error check on above
   
+  // setup loopback rx
+  loopback_client = open("/dev/ttyO2", O_RDWR | O_NOCTTY | O_SYNC);
 
+  tcgetattr(loopback_client, &term_attr);
+  // do an error check on the above
+
+  // set terminal baud rates
+//  cfsetispeed(&term_attr, B115200);
+//  cfsetospeed(&term_attr, B115200);
+
+  cfsetispeed(&term_attr, B9600);
+  cfsetospeed(&term_attr, B9600);
+
+  // set non-blocking
+  term_attr.c_cc[VMIN] = 0;
+  term_attr.c_cc[VTIME] = 10;  // set 1sec timeout (10 deciseconds per struct termios)
+
+  term_attr.c_iflag &= ~IGNBRK;         // disable break processing
+        term_attr.c_lflag = 0;                // no signaling chars, no echo,
+                                        // no canonical processing
+        term_attr.c_oflag = 0;                // no remapping, no delays
+        term_attr.c_cc[VMIN]  = 0;            // read doesn't block
+        
+
+        term_attr.c_iflag =  IXOFF; // shut off xon/xoff ctrl
+
+        term_attr.c_cflag |= (CLOCAL | CREAD);// ignore modem controls,
+                                        // enable reading
+        term_attr.c_cflag &= ~(PARENB | PARODD);      // shut off parity
+        term_attr.c_cflag &= ~CSTOPB;
+        term_attr.c_cflag &= ~CRTSCTS;
+
+  // set baud rate etc
+  tcsetattr(loopback_client, TCSANOW, &term_attr);
+  // do an error check on above
+  
 
   return 0;
+}
+
+void* loopbackthreadrx()
+{
+  char msg_buf[DEFAULT_BUF_SIZE];
+
+  while(bizzounce == 0)
+  {
+    read(loopback_client, msg_buf, DEFAULT_BUF_SIZE);
+    printf("Message received: %s\n", msg_buf);
+  }
 }
 
 void* commthreadrx()
@@ -51,15 +116,19 @@ void* commthreadrx()
   char msg_buf[DEFAULT_BUF_SIZE]; // may need to be bigger to accomodate large image transfer chunks
   comm_msg_t msg_struct;
   ipcmessage_t ipc_struct;
-
+  
   init_comm();
+//  printf("entered commthreadrx.\n");
 
   while(bizzounce == 0)
   {
+    printf("bizzounce: %d\n", bizzounce); // try a loopback from one UART to another
     read(uart_client, msg_buf, DEFAULT_BUF_SIZE);
+    printf("!");
     if(strlen(msg_buf) > 0)
     {
       // process from comm type to ipc message type
+      printf("Received from client: %s\n", msg_buf);
       decipher_comm_msg(msg_buf, &msg_struct);
       strcpy(ipc_struct.timestamp, msg_struct.timestamp);
       // types:
@@ -77,7 +146,7 @@ void* commthreadrx()
 
       // build IPC message string from assembled IPC message struct
       build_ipc_msg(ipc_struct, msg_buf);
-      
+
       // put on ipc queue
       mq_send(ipc_queue, msg_buf, strlen(msg_buf), 0);
     }

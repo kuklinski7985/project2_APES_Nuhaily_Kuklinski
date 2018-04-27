@@ -10,7 +10,7 @@ typedef enum{
 
 /*locations messages can be sent to and received from*/
 typedef enum{
-  IPC_NONE, IPC_LOG, IPC_MAIN, IPC_SOCKET, IPC_USER, IPC_HB, IPC_UART
+  IPC_NONE, IPC_LOG, IPC_MAIN, IPC_SOCKET, IPC_USER, IPC_HB, IPC_UART, IPC_LOOPBACK
 } location_t;
 
 // Server-client message types

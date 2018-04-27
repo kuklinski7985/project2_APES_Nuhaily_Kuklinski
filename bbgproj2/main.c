@@ -47,6 +47,13 @@ int main(int argc, char* argv[])
     return -1;
   }
 
+  checking = pthread_create(&comm_thread, &attr, loopbackthreadrx, (void*)input1);
+  if(checking)
+  {
+    fprintf(stderr, "Error creating loopback rx thread");
+    return -1;
+  }
+
   checking = pthread_create(&terminal_thread, &attr, userterminal, (void*)input1);
   if(checking)
   {
@@ -92,7 +99,7 @@ int main(int argc, char* argv[])
  /******monitors the main message queue for new messages and distributes accordingly******/
  /******also provides the system heartbeat for the sensors*******/
   mq_getattr(ipc_queue, &ipc_attr);
-
+    //printf("comm rx thread created successfully.\n");
   // Print user terminal menu
   printTerminalMenu();
   printTerminalPrompt();
@@ -252,6 +259,21 @@ void* userterminal()
           strcpy(ipc_buf.payload, "Test string.\n");
           strcpy(buf, "");
           build_ipc_msg(ipc_buf, buf);
+          mq_send(ipc_queue, buf, strlen(buf), 0); // send to main and have main transmit over UART
+          break;
+
+        case 'd':
+        case 'D':
+          // construct an ipc item to send a string over uart1
+          strcpy(ipc_buf.timestamp, getCurrentTimeStr() );
+          ipc_buf.source = IPC_USER;
+          ipc_buf.destination = IPC_UART;
+          ipc_buf.type = MSG_QUERY;
+          ipc_buf.comm_type = COMM_QUERY;
+          ipc_buf.src_pid = getpid();
+          strcpy(ipc_buf.payload, "Loopback string.\n");
+          strcpy(buf, "");
+          build_ipc_msg(ipc_buf, buf);
           mq_send(ipc_queue, buf, strlen(buf), 0);
           break;
 
@@ -269,6 +291,7 @@ void printTerminalMenu()
   printf("\nBBG Server Terminal Menu:\n");
   printf("(M) Print this menu\n");
   printf("(C) Send a string to the client at UART1\n");
+  printf("(D) Send a string to the client at UART2\n");
 }
 
 void printTerminalPrompt()

@@ -87,6 +87,7 @@ void shuffler_king()
 
     case IPC_SOCKET:
     case IPC_UART:
+    case IPC_LOOPBACK:
       // convert ipc message type to comm message type
       strcpy(comm_msg.timestamp, ipc_msg.timestamp);
       comm_msg.type = ipc_msg.comm_type; // determine type based on packet contents (payload?)
@@ -96,13 +97,21 @@ void shuffler_king()
       if(ipc_msg.destination == IPC_UART)
       {
         // write to UART1
-       // printf("Written to UART1: %s\n", socket_str);
+        printf("Written to UART1: %s\n", socket_str);
         write(uart_client, socket_str, strlen(socket_str) );
       }
       else if (ipc_msg.destination == IPC_SOCKET)
       {
         // write to socket
       }
+
+      // loopback test
+      else if (ipc_msg.destination == IPC_LOOPBACK)
+      {
+        printf("Written to UART2: %s\n", socket_str);
+        write(loopback_client, socket_str, strlen(socket_str) );
+      }
+
       //mq_send(socket_queue, socket_str, strlen(socket_str), 0);
       break;
 

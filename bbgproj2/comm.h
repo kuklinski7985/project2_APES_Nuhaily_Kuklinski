@@ -41,6 +41,7 @@ typedef int uart_t; // uart port file descriptor type
 
 //uart_t user_terminal;
 uart_t uart_client;//[3]; // eventually expand to array of clients somehow
+uart_t loopback_client;
 
 void decipher_comm_msg(char* comm_msg, comm_msg_t* msg_struct);
 void build_comm_msg(comm_msg_t msg_struct, char* comm_msg);
@@ -49,6 +50,7 @@ void decipher_comm_data(data_t comm_data, char* payload);
 void build_comm_data(char* payload, comm_msg_t comm_data);
 
 void* commthreadrx();
+void* loopbackthreadrx();
 
 // message format (if it contains sensor data): <type>\n<timestamp>\n<data_t>|<payload>
 
