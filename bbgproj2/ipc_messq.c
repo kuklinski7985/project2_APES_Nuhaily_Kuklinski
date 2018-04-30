@@ -59,8 +59,8 @@ void shuffler_king()
           case IPC_SOCKET:
           case IPC_UART1:
           case IPC_UART2:
-          case IPC_UART3:
           case IPC_UART4:
+          case IPC_UART5:
             if(ipc_msg.type == MSG_INFO)  // info messages from the client threads (typically connection status)
             {
               strcpy(log_str, ipc_msg.timestamp);
@@ -121,8 +121,8 @@ void shuffler_king()
     case IPC_SOCKET:
     case IPC_UART1:
     case IPC_UART2:
-    case IPC_UART3:
     case IPC_UART4:
+    case IPC_UART5:
     case IPC_LOOPBACK:
       // convert ipc message type to comm message type
       strcpy(comm_msg.timestamp, ipc_msg.timestamp);
@@ -138,10 +138,10 @@ void shuffler_king()
         case IPC_UART2:
           uart_write(uart_client[1], socket_str);
           break;
-        case IPC_UART3:
+        case IPC_UART4:
           uart_write(uart_client[2], socket_str);
           break;
-        case IPC_UART4:
+        case IPC_UART5:
           uart_write(uart_client[3], socket_str);
           break;
         case IPC_SOCKET:

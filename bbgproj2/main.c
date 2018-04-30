@@ -28,6 +28,24 @@ int main(int argc, char* argv[])
 
   init_comm();
 
+  /****using argc to give file name for logger at run time****/
+  if(argc > 1)
+  {
+    strcpy(log_filename, argv[1]);
+  }
+  else
+  {
+    strcpy(log_filename, "prj.log");
+  }
+  
+  strcpy(logfile.filename, log_filename);
+
+  if(fileCreate(&logfile) == -1)
+  {
+    printf("Error creating logfile.\n");
+    bizzounce = 1;
+  }
+
   checking = pthread_create(&log_thread, &attr, logger, (void*)input1);
   if(checking)
   {
@@ -96,28 +114,10 @@ int main(int argc, char* argv[])
   ipc_msg.source = IPC_MAIN;
   ipc_msg.destination = IPC_LOG;
   ipc_msg.src_pid = getpid();
-  strcpy(ipc_msg.payload, "Main thread initialized.\n");
+  strcpy(ipc_msg.payload, "Main thread initialized.\r\n");
   build_ipc_msg(ipc_msg, msg_str);
   mq_send(ipc_queue, msg_str, strlen(msg_str), 0);
   memset(msg_str, 0, strlen(msg_str));
-
-  /****using argc to give file name for logger at run time****/
-  if(argc > 1)
-  {
-    strcpy(log_filename, argv[1]);
-  }
-  else
-  {
-    strcpy(log_filename, "prj.log");
-  }
-  
-  strcpy(logfile.filename, log_filename);
-
-  if(fileCreate(&logfile) == -1)
-  {
-    //printf("Error creating logfile.\n");
-    bizzounce = 1;
-  }
  
  /******monitors the main message queue for new messages and distributes accordingly******/
  /******also provides the system heartbeat for the sensors*******/
@@ -192,7 +192,7 @@ void* heartbeat()
   ipc_struct.source = IPC_HB;
   ipc_struct.destination = IPC_LOG;
   ipc_struct.src_pid = getpid();
-  strcpy(ipc_struct.payload, "Heartbeat thread initialized.\n");
+  strcpy(ipc_struct.payload, "Heartbeat thread initialized.\r\n");
   build_ipc_msg(ipc_struct, ipc_string);
   mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
 
@@ -263,12 +263,12 @@ void* heartbeat()
 
       // form message to main to inform that client has disconnected
       strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
-      ipc_struct.source = IPC_UART3;
+      ipc_struct.source = IPC_UART4;
       ipc_struct.destination = IPC_MAIN;
       ipc_struct.type = MSG_INFO;
       ipc_struct.comm_type = COMM_NONE;
       ipc_struct.src_pid = (pid_t)getpid();
-      strcpy(ipc_struct.payload, "Client at UART3 disconnected.\r\n");
+      strcpy(ipc_struct.payload, "Client at UART4 disconnected.\r\n");
       build_ipc_msg(ipc_struct, ipc_string);
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
     }
@@ -279,12 +279,12 @@ void* heartbeat()
 
       // form message to main to inform that client has disconnected
       strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
-      ipc_struct.source = IPC_UART4;
+      ipc_struct.source = IPC_UART5;
       ipc_struct.destination = IPC_MAIN;
       ipc_struct.type = MSG_INFO;
       ipc_struct.comm_type = COMM_NONE;
       ipc_struct.src_pid = (pid_t)getpid();
-      strcpy(ipc_struct.payload, "Client at UART4 disconnected.\r\n");
+      strcpy(ipc_struct.payload, "Client at UART5 disconnected.\r\n");
       build_ipc_msg(ipc_struct, ipc_string);
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
     }
@@ -304,6 +304,7 @@ void* heartbeat()
 void hb_warn(union sigval arg)
 {
   log_hb_count++;
+  //printf("Tick.\r\n");
 }
 
 void* userterminal()
@@ -315,16 +316,18 @@ void* userterminal()
   char buf[64];
   ipcmessage_t ipc_buf;
   int n = 0;
-//printTerminalMenu();
-//printTerminalPrompt();
+  printTerminalMenu();
+  printTerminalPrompt();
+
   while(bizzounce == 0)
   {
-    //if(scanf("%s", buf) == -1)
+    n = scanf("%s", buf);
+     
     //strcpy(buf, "1");
     //if(buf[0] == '0')
     
-    n = read(fd_terminal, buf, 1);
-    if(n < 0)
+    //n = read(fd_terminal, buf, 1);
+    if(n <= 0)
     {
       //printf("Error reading from terminal. errno: %s\n", strerror(errno));
       // might be better to form a message and put it on the ipc queue so main can do this display
@@ -332,12 +335,14 @@ void* userterminal()
 
     else
     {
+      //printf("%d characters received at terminal.\r\n", n);
       switch(buf[0])
       {
         case 'm':
         case 'M':
           // would it be better if main did this display?
-          //printTerminalMenu();
+          printTerminalMenu();
+          printTerminalPrompt();
         /*  ipc_buf.source = IPC_USER;
           ipc_buf.destination = IPC_MAIN;
           ipc_buf.type = MSG_QUERY;
@@ -357,6 +362,7 @@ void* userterminal()
           strcpy(buf, "");
           build_ipc_msg(ipc_buf, buf);
           mq_send(ipc_queue, buf, strlen(buf), 0); // send to main and have main transmit over UART
+          printTerminalPrompt();
           break;
 
         case 'd':
@@ -372,6 +378,7 @@ void* userterminal()
           strcpy(buf, "");
           build_ipc_msg(ipc_buf, buf);
           mq_send(ipc_queue, buf, strlen(buf), 0);
+          printTerminalPrompt();
           break;
 
         case '2':
@@ -382,22 +389,22 @@ void* userterminal()
           break;
       }
     }
-    //printTerminalPrompt();
+    
   }
 }
 
 void printTerminalMenu()
 {
-/*  printf("\nBBG Server Terminal Menu:\n");
-  printf("(M) Print this menu\n");
-  printf("(C) Send a string to the client at UART1\n");
-  printf("(D) Send a string to the client at UART2\n");*/
-
+  printf("\n\rBBG Server Terminal Menu:\r\n");
+  printf("(M) Print this menu\r\n");
+  printf("(C) Send a string to the client at UART1\r\n");
+  printf("(D) Send a string to the client at UART2\r\n");
+/*
   uart_write(fd_terminal, "\r\nBBG Server Terminal Menu:\r\n");
   uart_write(fd_terminal, "(M) Print this menu\r\n" );
   uart_write(fd_terminal, "(C) Send a string to the client at UART1\r\n" );
   uart_write(fd_terminal, "(D) Send a string to the client at UART2\r\n" );
-  
+  */
 }
 
 void printTerminalPrompt()
