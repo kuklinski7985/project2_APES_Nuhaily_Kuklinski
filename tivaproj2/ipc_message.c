@@ -99,3 +99,18 @@ void build_ipc_msg(ipcmessage_t msg_struct, char* ipc_msg)
 }
 
 
+void getTimeStamp(ipcmessage_t *ipc_mess)
+{
+    uint8_t ts_sec;
+    uint8_t ts_min;
+
+    xSemaphoreTake(xtimestamp_sema,0);
+
+    ts_sec = tiva_sec;
+    ts_min = tiva_min;
+
+    xSemaphoreGive(xtimestamp_sema);
+    sprintf(timeString, "[%02d:%02d]", ts_min, ts_sec);
+    strcpy(ipc_mess->timestamp, timeString);
+
+}

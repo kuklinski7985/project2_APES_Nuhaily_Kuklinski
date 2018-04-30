@@ -25,6 +25,8 @@
 #include "driverlib/timer.h"
 #include "driverlib/uart.h"
 #include "utils/uartstdio.h"
+#include "driverlib/systick.h"
+
 
 
 // FreeRTOS
@@ -34,6 +36,7 @@
 #include "task.h"
 #include "timers.h"
 #include "FreeRTOS_sockets.h"
+#include "semphr.h"
 
 // Project 2 includes
 #include "ipc_message.h"
@@ -43,6 +46,10 @@
 
 //RFID sensor
 #include "RFID_SM130.h"
+
+//Camera
+#include "myCamera_simple.h"
+
 
 #ifndef MAIN_H_
 #define MAIN_H_
@@ -71,21 +78,25 @@ void vUARTRxTerminalTask(void* pvParameters);
 void vGPIOTask(void* pvParameters);
 void vHeartbeatTask(void* pvParameters);
 void vHBTimerCallback(void* pvParameters);
+void vCameraTask(void* pvParameters);
+void vTerminalLogging(void* pvParameters);
 
 // Interrupt handlers
 void UARTTerminalIntHandler(void);
 
 //RFID Functions
 void UART_RFID_Handler(void);
-void UARTRFID_send(char * RFID_buffer, uint32_t byteCount);
+
 void vRFIDTask(void *pvParameters);
 
 int xInitThreads(void);
 
 
 //value for the data read from rfid
-extern char rfid_data_recv[32];
+extern char rfid_data_recv[RFID_RECV_BUFF_LENGTH];
+extern char camera_data_recv[CAMERA_RECV_BUFF_LENGTH];
 uint8_t rfid_handler_exit_flag;
+uint8_t camera_handler_exit_flag;
 
 
 // Timer callbacks
@@ -94,5 +105,10 @@ void vHBTimerCallback(void* pvParameters);
 extern void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct);
 
 typedef uint32_t heartbeat_t;
+
+void vTimeStampCallBack( void* pvParameters );
+
+
+
 
 #endif /* MAIN_H_ */

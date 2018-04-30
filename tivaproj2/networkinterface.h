@@ -79,7 +79,7 @@ void eth_MAC_init( void );
 /*transmit a packet from the supplied buffer, called directly from the application
  * pui8Buf points to ethernet frame to send, i32BufLen number of bytes in the frame
  */
-static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen);
+//static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen);
 
 BaseType_t xNetworkInterfaceOutput( NetworkBufferDescriptor_t * const pxDescriptor, BaseType_t xReleaseAfterSend );
 

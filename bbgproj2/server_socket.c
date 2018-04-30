@@ -30,7 +30,7 @@ void* serversocket()
     recv_message[i] = '\0';
   }
   
-  printf("Server Initialization Starting\n");
+  //printf("Server Initialization Starting\n");
   
   //socket returns file descriptor for the new socket, -1 error
   if((sock_handle = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -53,7 +53,7 @@ void* serversocket()
        printf("bind errno %s\n", strerror(errno));
     }
 
-  printf("Listening mode for server\n");
+  //printf("Listening mode for server\n");
   listen(sock_handle,5);
 
   //initializing connected clients array to zero
@@ -63,7 +63,7 @@ void* serversocket()
   }
 
   //adds the main socket descriptor to the watch list
-  printf("Socket Created using handle %d\n",sock_handle);
+  //printf("Socket Created using handle %d\n",sock_handle);
   
   while(1)
   {
@@ -78,7 +78,7 @@ void* serversocket()
         printf("clients watching %d\n",connected_clients_fd[i]);
       } 
     }
-    printf("Waiting for new activity...\n");
+    //printf("Waiting for new activity...\n");
     new_activity = select((MAX_NUM_CLIENTS+1), &readfds, NULL, NULL, NULL);
     if(new_activity < 0)
     {

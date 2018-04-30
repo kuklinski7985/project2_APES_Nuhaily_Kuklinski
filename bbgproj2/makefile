@@ -4,7 +4,8 @@ OBJS = $(SOURCES:.c=.o)
 OBJS_SOCK =
 IMP = $(SOURCES:.c=.i)
 IMP_SOCK = $(SOURCES_SOCK:.c=.i)
-INCLUDES = main.h
+INCLUDES = main.h prj2types.h
+
 
 CC = arm-linux-gnueabihf-gcc
 #CC = gcc
@@ -44,3 +45,4 @@ buildc: $(OBJS_SOCK)
 .PHONY: clean
 clean:
 	-rm *.i *.o *.map *.d *.elf a.out
+>>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099

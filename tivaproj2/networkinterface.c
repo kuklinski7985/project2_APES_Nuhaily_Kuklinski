@@ -235,7 +235,7 @@ void EthernetIntHandler(void)
 
 //this is the same at eth_tx from the class slides
 //PacketTransmit(pxDescriptor->pucEthernetBuffer, pxDscriptor->xDataLength)
-static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
+/*static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
 {
     //wait for transmit descriptor to free up
     while(g_psTxDescriptor[g_ui32TxDescIndex].ui32CtrlStatus & DES0_TX_CTRL_OWN)
@@ -262,7 +262,7 @@ static int32_t PacketTransmit(uint8_t *pui8Buf, int32_t i32BufLen)
     //return the number of bytes sent
     return(i32BufLen);
 
-}
+}*/
 
 void vApplicationIPNetworkEventHook( eIPCallbackEvent_t eNetworkEvent )
 {
