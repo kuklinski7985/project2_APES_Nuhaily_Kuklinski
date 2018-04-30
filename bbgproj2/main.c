@@ -468,4 +468,4 @@ void printTerminalPrompt()
   //printf("\nEnter command (M for menu): ");
   uart_write(fd_terminal, "\r\nEnter command (M for menu): ");
 }
->>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099
+

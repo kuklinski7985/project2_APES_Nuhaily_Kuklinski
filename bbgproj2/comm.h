@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <mqueue.h>
+#include <termios.h>
 #include "prj2types.h"
 #include "ipc_messq.h"
 
@@ -67,4 +68,4 @@ int uart_read(uart_t uart, char* buffer, int count);
 // message format (if it contains sensor data): <type>\n<timestamp>\n<data_t>|<payload>
 
 #endif
->>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099
+

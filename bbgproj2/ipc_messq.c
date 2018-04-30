@@ -374,4 +374,4 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
   }*/
 
 }
->>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099
+

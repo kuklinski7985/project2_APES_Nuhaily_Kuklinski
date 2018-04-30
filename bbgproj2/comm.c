@@ -11,11 +11,7 @@ http://man7.org/linux/man-pages/man3/termios.3.html
 *  as reference
 **/
 
-/*
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <termios.h>*/
+
 #include "comm.h"
 
 extern int bizzounce;
