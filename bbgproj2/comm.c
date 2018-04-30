@@ -11,10 +11,11 @@ http://man7.org/linux/man-pages/man3/termios.3.html
 *  as reference
 **/
 
-//#include <stdio.h>
+/*
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <termios.h>
+#include <termios.h>*/
 #include "comm.h"
 
 extern int bizzounce;
@@ -22,7 +23,9 @@ extern int bizzounce;
 extern int hb_client_count[MAX_UART_CLIENTS];
 extern int hb_client_err[MAX_UART_CLIENTS];
 
-
+/**
+ *  @brief Initialize UART ports for clients
+ */
 int init_comm()
 {
   // initialize UARTs 1 through 4 for inter-board communication
@@ -70,6 +73,7 @@ int init_comm()
   // set baud rate etc
   tcsetattr(fd_terminal, TCSANOW, &term_attr);*/
 
+  // Open four UART clients and log + display open status return
   if(uart_client[0] = open("/dev/ttyO1", O_RDWR | O_NOCTTY | O_NDELAY) < 0)
   {
     printf("Error opening UART1.\r\n");
@@ -137,7 +141,9 @@ int init_comm()
     build_ipc_msg(ipc_struct, ipc_string);
     mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
   }  
+  // end of UART open
 
+  // set properties for all four UART clients
   memset(&uart_attr, 0, sizeof(uart_attr));
   tcgetattr(uart_client[0], &uart_attr);  // just get the attributes from one UART port
                                           // and set up to do a mass-edit of all client
@@ -174,7 +180,7 @@ int init_comm()
   uart_attr.c_cflag &= ~CSTOPB;
   uart_attr.c_cflag &= ~CRTSCTS;
 
-  // set baud rate etc
+  // write same settings to all four UART clients
   for(int i = 0; i < MAX_UART_CLIENTS; i++)
   {
     tcsetattr(uart_client[i], TCSANOW, &uart_attr);
@@ -183,6 +189,9 @@ int init_comm()
   return 0;
 }
 
+/**
+ *  @brief Handler function for UART client 0 at UART1
+ */
 void* comm0threadrx()
 {
   // initialize comm (uart rx from client)
@@ -255,6 +264,9 @@ void* comm0threadrx()
 //  printf("entered commthreadrx.\n");
 }
 
+/**
+ *  @brief Handler function for UART client 1 at UART2
+ */
 void* comm1threadrx()
 {
   // initialize comm (uart rx from client)
@@ -326,6 +338,9 @@ void* comm1threadrx()
 //  printf("entered commthreadrx.\n");
 }
 
+/**
+ *  @brief Handler function for UART client 2 at UART4
+ */
 void* comm2threadrx()
 {
   // initialize comm (uart rx from client)
@@ -392,6 +407,9 @@ void* comm2threadrx()
 //  printf("entered commthreadrx.\n");
 }
 
+/**
+ *  @brief Handler function for UART client 3 at UART5
+ */
 void* comm3threadrx()
 {
   // initialize comm (uart rx from client)
@@ -457,6 +475,11 @@ void* comm3threadrx()
 //  printf("entered commthreadrx.\n");
 }
 
+/**
+ *  @brief Decipher comm string into comm_msg_t message type
+ *  @param comm_msg input string
+ *  @param msg_struct output comm msg struct
+ */
 void decipher_comm_msg(char* comm_msg, comm_msg_t* msg_struct)
 {
   int i=0;
@@ -494,6 +517,11 @@ void decipher_comm_msg(char* comm_msg, comm_msg_t* msg_struct)
 
 }
 
+/**
+ *  @brief Build comm string into comm_msg_t message type
+ *  @param msg_struct input comm msg struct
+ *  @param comm_msg output string for transmit
+ */
 void build_comm_msg(comm_msg_t msg_struct, char* comm_msg)
 {
   char tmp[DEFAULT_BUFFER_SIZE];
@@ -509,6 +537,12 @@ void build_comm_msg(comm_msg_t msg_struct, char* comm_msg)
   strcat(comm_msg, "\n");
 }
 
+/**
+ *  @brief Decipher comm payload into useful data or commands.
+ *  @param data_t data payload
+ *  @param payload input payload string to decipher
+ * Function is not used - was planned to be but did not get far enough
+ */
 void decipher_comm_data(data_t comm_data, char* payload)
 {
   int i=0;
@@ -558,8 +592,11 @@ void decipher_comm_data(data_t comm_data, char* payload)
 
 }
 
-/*
- *
+/**
+ *  @brief Build comm payload into useful data or commands.
+ *  @param data_t data payload
+ *  @param payload input payload string to build
+ * Function is not used - was planned to be but did not get far enough
  */
 
 void build_comm_data(char* payload, comm_msg_t comm_data)
@@ -586,6 +623,12 @@ manage_comm_msg(comm_msg_t comm_msg)
 }
 */
 
+/**
+ *  @brief Transmit string over selected UART port
+ *  @param uart_t input UART handle
+ *  @param buffer string to transmit
+ *  @return return status
+ */
 int uart_write(uart_t uart, char* buffer)
 {
   pthread_mutex_lock(&uart_mutex);
@@ -600,6 +643,13 @@ int uart_write(uart_t uart, char* buffer)
   return n;
 }
 
+/**
+ *  @brief Read string from selected UART port of size count
+ *  @param uart_t input UART handle
+ *  @param buffer string to store output in
+ *  @param count number of bytes to read
+ *  @return return status
+ */
 int uart_read(uart_t uart, char* buffer, int count)
 {
   int n;
