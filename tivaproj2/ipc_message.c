@@ -2,7 +2,7 @@
 * @file ipc_messq.c
 * @brief fxn definition for queue creation and use
 * @author Andrew Kuklinski and Adam Nuhaily
-* @date 03/11/2018
+* @date 04/28/2018
 **/
 
 #include "ipc_message.h"

@@ -1,11 +1,8 @@
 /**
  * @file main.c
- * @author Adam Nuhaily
- * @date 4/8/2018
- * @brief Homework 5 problem 4 main source file
- *
- * This program is intended for a TiVA board TM4C1294. It blinks an LED at 2Hz and outputs
- * a counter over UART (115200 8-n-1) using a multi task implementation.
+ * @author Adam Nuhaily and Andrew Kuklinski
+ * @date 4/29/2018
+ * @brief main function for project 2 using FreeRTOS and TivaWare
  */
 
 #include "main.h"
@@ -13,6 +10,7 @@
 uint8_t led_state;
 uint32_t f_sysclk;
 
+//Creating task
 TaskHandle_t masterTask;
 TaskHandle_t terminalTask;
 TaskHandle_t gpioTask;
@@ -41,12 +39,12 @@ const char RFIDTaskName[9] = "RFID Task";
 const char CameraTaskName[11] = "Camera Task";
 const char TermLogName[21] = "Terminal Logging Task";
 
-
+//global variables for the all task heartbeat
 uint8_t tiva_sec = 0;
 uint8_t tiva_min = 0;
 SemaphoreHandle_t xtimestamp_sema;
 
-uint8_t rfid_sec = 0;
+//uint8_t rfid_sec = 0;
 SemaphoreHandle_t xrfid_sema;
 char timeString[9];
 const int hb_timeout = 10;

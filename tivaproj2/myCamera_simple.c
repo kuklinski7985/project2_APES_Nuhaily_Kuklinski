@@ -10,6 +10,7 @@
  * They are signals that are sent from the host to the camera
  */
 
+//commands for the camera
 uint8_t stop_frame[] = {PROTO_SIGN_RECV, SN_NUM, CMD_FBUF_CTRL, 0x01, NADA};
 
 uint8_t data_length_current_frame[] = {PROTO_SIGN_RECV, SN_NUM, CMD_GET_FBUF_LEN, 0X01, NADA};

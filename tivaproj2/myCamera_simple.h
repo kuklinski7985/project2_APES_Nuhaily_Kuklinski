@@ -94,12 +94,16 @@ extern uint8_t camera_handler_exit_flag;
 //uint8_t delay_H = 0x00;                     //used to set delay in pic_data_return array, 2 bytes, delay*0.01ms
 //uint8_t delay_L = 0x0A;
 
+//sends properly formatted commands to the camera
 void UARTCamera_sendCommand(uint8_t *cmd_array, uint8_t array_len);
 
+//obtain image size
 void setImageSize(uint8_t picsize);
 
+//buffer flush
 void clear_recv_buffer(void);
 
+//sends proper series of commands to take a picture
 uint8_t takePicture(void);
 
 #endif /*_myCamera_simple_h_*/
