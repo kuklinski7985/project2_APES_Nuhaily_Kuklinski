@@ -223,11 +223,6 @@ void* comm0threadrx()
         printf("Tick UART1--.\r\n");
       }
     }
-    else
-    {
-      hb_client_count[0]++;
-      printf("Tick UART1.\r\n");
-    }
 
     //fscanf(uart_client, "%s", msg_buf);
     if(strlen(msg_buf) > 0)
@@ -300,10 +295,6 @@ void* comm1threadrx()
         mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
       }
     }
-    else
-    {
-      hb_client_count[1]++;
-    }
 
     if(strlen(msg_buf) > 0)
     {
@@ -370,10 +361,6 @@ void* comm2threadrx()
       build_ipc_msg(ipc_struct, ipc_string);
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
     }
-    else
-    {
-      hb_client_count[2]++;
-    }
 
     if(strlen(msg_buf) > 0)
     {
@@ -438,10 +425,6 @@ void* comm3threadrx()
       strcpy(ipc_struct.payload, "Client at UART5 connected.\r\n");
       build_ipc_msg(ipc_struct, ipc_string);
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);      
-    }
-    else
-    {
-      hb_client_count[3]++;
     }
 
     if(strlen(msg_buf) > 0)
