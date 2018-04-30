@@ -44,8 +44,20 @@ typedef enum
   LIGHT
 } log_type_t;
 
+pthread_mutex_t log_mutex;
+pthread_mutex_t time_mutex;
+pthread_mutex_t sprintf_mutex;
+
+extern int bizzounce;   // Exit signal
+extern mqd_t log_queue;
+extern mqd_t ipc_queue;
+
+extern file_t logfile;
+
+extern int log_hb_count;
+extern int log_hb_err;
+
 void* logger();
-static void logger_handler();
 void log_exit();
 void writeLogStr(file_t* logfile, char* log_str);
 char* getCurrentTimeStr();

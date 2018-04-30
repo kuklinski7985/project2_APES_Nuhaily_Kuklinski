@@ -6,6 +6,7 @@ IMP = $(SOURCES:.c=.i)
 IMP_SOCK = $(SOURCES_SOCK:.c=.i)
 INCLUDES = main.h prj2types.h
 
+
 CC = arm-linux-gnueabihf-gcc
 #CC = gcc
 DEBUG = -pthread -lrt #-g -Wall -Werror -O0

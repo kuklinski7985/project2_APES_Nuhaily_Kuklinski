@@ -7,18 +7,7 @@
  */
 #include "logger.h"
 
-pthread_mutex_t log_mutex;
-pthread_mutex_t time_mutex;
-pthread_mutex_t sprintf_mutex;
 
-extern int bizzounce;   // Exit signal
-extern mqd_t log_queue;
-extern mqd_t ipc_queue;
-
-extern file_t logfile;
-
-extern int log_hb_count;
-extern int log_hb_err;
 
 /**
  * @brief Logger thread handler function
@@ -53,24 +42,6 @@ void* logger()
   
   // Desire to exit, close logffile
   fileClose(&logfile);
-}
-
-/**
- * @brief Intended to be a sigevent handler for mq_notify, no longer used
- * 
- */
-static void logger_handler()
-{
-  char queue_buf[DEFAULT_BUF_SIZE];
-  unsigned int prio;
-  // file ops:
-  // open file
-  // read from queue
-  mq_receive(log_queue, queue_buf, DEFAULT_BUF_SIZE, &prio);
-
-  // add to file
-  writeLogStr(&logfile, queue_buf);
-
 }
 
 /**

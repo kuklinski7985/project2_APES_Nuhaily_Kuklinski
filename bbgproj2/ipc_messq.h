@@ -6,7 +6,7 @@
 **/
 
 #include <stddef.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -23,6 +23,8 @@
 #include <ctype.h>
 #include <mqueue.h>
 #include <errno.h>
+#include <pthread.h>
+
 #include "logger.h"
 #include "myusrled.h"
 #include "prj2types.h"

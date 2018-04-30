@@ -8,10 +8,13 @@
 #include "ipc_messq.h"
 #include "comm.h"
 
+
+extern int num_clients;
+
 extern int log_hb_count;
 extern int log_hb_err;
-extern int hb_hb_count;
-extern int hb_hb_err;
+extern int hb_client_count[MAX_UART_CLIENTS];
+extern int hb_client_err[MAX_UART_CLIENTS];
 
 /**
  * @brief Parse and process messages pulled from main IPC queue
@@ -19,7 +22,6 @@ extern int hb_hb_err;
  */
 void shuffler_king()
 { 
-
   char ipc_queue_buff[DEFAULT_BUF_SIZE];
   char log_str[DEFAULT_BUF_SIZE];
   char socket_str[DEFAULT_BUF_SIZE];
@@ -55,12 +57,26 @@ void shuffler_king()
         switch(ipc_msg.source)
         {
           case IPC_SOCKET:
-          case IPC_UART:
+          case IPC_UART1:
+          case IPC_UART2:
+          case IPC_UART3:
+          case IPC_UART4:
+            if(ipc_msg.type == MSG_INFO)  // info messages from the client threads (typically connection status)
+            {
+              strcpy(log_str, ipc_msg.timestamp);
+              strcat(log_str, "INFO: ");
+              strcat(log_str, ipc_msg.payload);
+              strcat(log_str, "\n");
+              printf("%s", log_str);
+              mq_send(log_queue, log_str, strlen(log_str), 0);
+            }
             // messages that have come from the socket, check the payload and process according to its contents
-            // handle UART messages the same as socket for now
+            // handle UART messages the same as socket
             // switch on the comm_t message type
             switch(ipc_msg.comm_type)
             {
+              
+             /* COMM_NONE, COMM_QUERY, COMM_DATA, COMM_INFO, COMM_CMD, COMM_ERROR, COMM_HB */
               case COMM_INFO:
                 // some status info was received from the client, format, display, and log the payload
                 strcpy(log_str, ipc_msg.timestamp);
@@ -70,9 +86,25 @@ void shuffler_king()
                 printf("%s", log_str);
                 mq_send(log_queue, log_str, strlen(log_str), 0);
                 break;
+
+              case COMM_DATA:
+                // a data packet was received from the TIVA, do something with it
+                break;
+
+              case COMM_ERROR:
+                // error message received from TIVA, determine what the error is, how to respond to it, log it, display
+                strcpy(log_str, ipc_msg.timestamp);
+                strcat(log_str, "ERROR FROM CLIENT: ");
+                strcat(log_str, ipc_msg.payload);
+                strcat(log_str, "\n");
+                printf("%s", log_str);
+                mq_send(log_queue, log_str, strlen(log_str), 0);
+                break;
+              
+              case COMM_CMD:  // the TIVA does not send commands to the BBG
               case COMM_NONE:
               default:
-                break;
+                break;  // do we need to log something here?
             }
             break;
         }
@@ -85,8 +117,12 @@ void shuffler_king()
       mq_send(log_queue, log_str, strlen(log_str), 0);
       break;
 
+    // Items for transmit to a client
     case IPC_SOCKET:
-    case IPC_UART:
+    case IPC_UART1:
+    case IPC_UART2:
+    case IPC_UART3:
+    case IPC_UART4:
     case IPC_LOOPBACK:
       // convert ipc message type to comm message type
       strcpy(comm_msg.timestamp, ipc_msg.timestamp);
@@ -94,25 +130,28 @@ void shuffler_king()
       strcpy(comm_msg.payload, ipc_msg.payload);
       strcpy(socket_str, "");
       build_comm_msg(comm_msg, socket_str);
-      if(ipc_msg.destination == IPC_UART)
+      switch(ipc_msg.destination)
       {
-        // write to UART1
-        printf("Written to UART1: %s\n", socket_str);
-        write(uart_client, socket_str, strlen(socket_str) );
+        case IPC_UART1:
+          uart_write(uart_client[0], socket_str);
+          break;
+        case IPC_UART2:
+          uart_write(uart_client[1], socket_str);
+          break;
+        case IPC_UART3:
+          uart_write(uart_client[2], socket_str);
+          break;
+        case IPC_UART4:
+          uart_write(uart_client[3], socket_str);
+          break;
+        case IPC_SOCKET:
+          //mq_send(socket_queue, socket_str, strlen(socket_str), 0);
+          break;   
+        default:
+          break;
       }
-      else if (ipc_msg.destination == IPC_SOCKET)
-      {
-        // write to socket
-      }
-
-      // loopback test
-      else if (ipc_msg.destination == IPC_LOOPBACK)
-      {
-        printf("Written to UART2: %s\n", socket_str);
-        write(loopback_client, socket_str, strlen(socket_str) );
-      }
-
-      //mq_send(socket_queue, socket_str, strlen(socket_str), 0);
+      
+      
       break;
 
     // General user-use items
@@ -123,7 +162,7 @@ void shuffler_king()
     // Type-less or erroneous items
     case IPC_NONE:
     default:
-      printf("Destination %d not valid\n", ipc_msg.destination);
+      //printf("Destination %d not valid\n", ipc_msg.destination);
       break;
   }
 }
@@ -169,7 +208,7 @@ void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct)
   int j=0;
   char tmp1[1];
   char tmp2[16];
-
+  
   // extract timestamp
   for(i=0, j=0; ipc_msg[i] != '\n' && ipc_msg[i] != '\0'; i++, j++)
   {
@@ -178,6 +217,7 @@ void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct)
   msg_struct->timestamp[j] = '\0';
   
   // determine message type
+  strcpy(tmp1, "");
   for(i++, j=0; ipc_msg[i] != '\n' && ipc_msg[i] != '\0'; i++, j++)
   {
     tmp1[j] = ipc_msg[i];
@@ -185,6 +225,7 @@ void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct)
   msg_struct->type = (message_t)atoi(tmp1);
 
   // determine source process
+  strcpy(tmp1, "");
   for(i++, j=0; ipc_msg[i] != '\n' && ipc_msg[i] != '\0'; i++, j++)
   {
     tmp1[j] = ipc_msg[i];
@@ -197,14 +238,15 @@ void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct)
     tmp2[j] = ipc_msg[i];
   }
   msg_struct->src_pid = (pid_t)atoi(tmp2);
-
+  
+  strcpy(tmp1, "");
   // destination process
   for(i++, j=0; ipc_msg[i] != '\n' && ipc_msg[i] != '\0'; i++, j++)
   {
-    tmp1[j] = ipc_msg[i];
+    tmp1[j] = ipc_msg[i]; 
   }
   msg_struct->destination = (location_t)atoi(tmp1);
-
+  
   // message payload (terminated by null char)
   for(i++, j=0; ipc_msg[i] != '\n' && ipc_msg[i] != '\0'; i++, j++)
   {

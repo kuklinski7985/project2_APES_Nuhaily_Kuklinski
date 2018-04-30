@@ -6,7 +6,7 @@
 **/
 
 #include <string.h>
-#include <stdio.h>
+//#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <linux/i2c-dev.h>
@@ -26,6 +26,7 @@
 #include "comm.h" 
 
 #define DEFAULT_BUF_SIZE    256
+#define HB_THRESHOLD        4
 
 typedef struct input_struct{
   int member1;
@@ -34,8 +35,12 @@ typedef struct input_struct{
 pthread_t log_thread;
 pthread_t socket_thread;      //thread for the remote socket
 pthread_t hb_thread;          //heartbeat sensor thread
-pthread_t comm_thread;
+pthread_t comm0_thread;   // could maybe have made these an array
+pthread_t comm1_thread;
+pthread_t comm2_thread;
+pthread_t comm3_thread;
 pthread_t terminal_thread;
+pthread_t loopback_thread;
 pthread_attr_t attr;         //standard attributes for pthread
 
 file_t logfile;
@@ -49,6 +54,13 @@ struct mq_attr ipc_attr;          //attributes struct for ipc queue
 
 int log_hb_count;
 int log_hb_err;
+
+int num_clients;
+
+int log_hb_count;
+int log_hb_err;
+int hb_client_count[MAX_UART_CLIENTS];
+int hb_client_err[MAX_UART_CLIENTS];
 
 void* heartbeat();
 void hb_warn(union sigval arg);

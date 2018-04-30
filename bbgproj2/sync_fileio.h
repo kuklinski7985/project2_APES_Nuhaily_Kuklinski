@@ -13,6 +13,9 @@
 #include <string.h>
 #include <pthread.h>
 
+#ifndef _SYNC_FILEIO_H
+#define _SYNC_FILEIO_H
+
 #define FILE_READ_WRITE   "w"
 #define FILE_READ_ONLY    "r"
 #define FILE_CREATE_NEW   "w+"
@@ -31,3 +34,5 @@ int8_t getString(file_t* fp);
 int8_t fileClose(file_t* fp);
 char fileRead(file_t* fp);
 FILE* fileOpen(file_t* fp);
+
+#endif

@@ -27,7 +27,7 @@ int8_t fileCreate(file_t* fp)
 
   if(!(fp->fileptr))
   {
-    printf("Error creating file.\n");
+    //printf("Error creating file.\n");
     return -1;
   }
 
@@ -42,6 +42,11 @@ int8_t fileCreate(file_t* fp)
  */
 int8_t fileWrite(file_t* fp, char* str)
 {
+  if(fp->filename[0] == '\0')
+  {
+    return -1;
+  }
+  
   pthread_mutex_lock(&file_mutex);
 
   fp->fileptr = fileOpen(fp);
@@ -84,12 +89,17 @@ int8_t fileClose(file_t* fp)
  */
 char fileRead(file_t* fp)
 {
-  if(!fp->fileptr)
-  {
+  char c;
+
+  if(fp->filename[0] == '\0')
+  {    
     return -1;
   }
 
-  return fgetc(fp->fileptr);
+  fp->fileptr = fileOpen(fp);
+  c = fgetc(fp->fileptr);
+
+  return c;
 }
 
 /**
