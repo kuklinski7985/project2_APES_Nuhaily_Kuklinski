@@ -46,6 +46,7 @@ void* serversocket()
       printf("Error with Setsockopt\n");
   }
 
+//setting connection attributes
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
   addr.sin_port = htons(port1);
@@ -67,7 +68,7 @@ void* serversocket()
 
   //adds the main socket descriptor to the watch list
   //printf("Socket Created using handle %d\n",sock_handle);
-  
+  /*this will watch for multiple connections from clients over a socket*/
   while(1)
   {
     FD_ZERO(&readfds);
