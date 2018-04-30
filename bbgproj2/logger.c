@@ -23,6 +23,7 @@ void* logger()
   unsigned int prio;
   ipcmessage_t ipc_msg;
   char msg_str[DEFAULT_BUF_SIZE];
+  //printf("Logger thread initialized.\r\n");
 
   while(bizzounce == 0)
   {
@@ -33,6 +34,7 @@ void* logger()
       // When present, pull and insert into logfile
       mq_receive(log_queue, queue_buf, DEFAULT_BUF_SIZE, &prio);
       writeLogStr(&logfile, queue_buf);
+      //printf("Written to logfile: %s\r\n", queue_buf);
       mq_getattr(log_queue, &log_attr);
       memset(queue_buf, 0, strlen(queue_buf));
     }

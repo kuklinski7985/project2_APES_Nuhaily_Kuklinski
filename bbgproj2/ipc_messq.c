@@ -59,8 +59,8 @@ void shuffler_king()
           case IPC_SOCKET:
           case IPC_UART1:
           case IPC_UART2:
-          case IPC_UART3:
           case IPC_UART4:
+          case IPC_UART5:
             if(ipc_msg.type == MSG_INFO)  // info messages from the client threads (typically connection status)
             {
               strcpy(log_str, ipc_msg.timestamp);
@@ -75,8 +75,8 @@ void shuffler_king()
             // switch on the comm_t message type
             switch(ipc_msg.comm_type)
             {
-              
-             /* COMM_NONE, COMM_QUERY, COMM_DATA, COMM_INFO, COMM_CMD, COMM_ERROR, COMM_HB */
+              // types:
+             // COMM_NONE, COMM_QUERY, COMM_DATA, COMM_INFO, COMM_CMD, COMM_ERROR, COMM_HB 
               case COMM_INFO:
                 // some status info was received from the client, format, display, and log the payload
                 strcpy(log_str, ipc_msg.timestamp);
@@ -118,11 +118,13 @@ void shuffler_king()
       break;
 
     // Items for transmit to a client
+    // Designed to behave independent of hardware connection to client- determine destination
+    // and write to appropriate interface
     case IPC_SOCKET:
     case IPC_UART1:
     case IPC_UART2:
-    case IPC_UART3:
     case IPC_UART4:
+    case IPC_UART5:
     case IPC_LOOPBACK:
       // convert ipc message type to comm message type
       strcpy(comm_msg.timestamp, ipc_msg.timestamp);
@@ -132,26 +134,24 @@ void shuffler_king()
       build_comm_msg(comm_msg, socket_str);
       switch(ipc_msg.destination)
       {
-        case IPC_UART1:
+        case IPC_UART1: // Write to UART directly
           uart_write(uart_client[0], socket_str);
           break;
         case IPC_UART2:
           uart_write(uart_client[1], socket_str);
           break;
-        case IPC_UART3:
+        case IPC_UART4:
           uart_write(uart_client[2], socket_str);
           break;
-        case IPC_UART4:
+        case IPC_UART5:
           uart_write(uart_client[3], socket_str);
           break;
-        case IPC_SOCKET:
+        case IPC_SOCKET:  // push to socket queue and let socket thread handle
           //mq_send(socket_queue, socket_str, strlen(socket_str), 0);
           break;   
         default:
           break;
       }
-      
-      
       break;
 
     // General user-use items
@@ -301,7 +301,8 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
   char tmp[DEFAULT_BUF_SIZE];
   char loglevel[16];
   char sourceid[64];
-
+  
+  // Determine type of incoming message and process depending on type, source, and destination
   switch(msg.type)
   {
     case(MSG_DATA):
@@ -334,7 +335,8 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
           break;
       }
       //usr_led_toggle(1, 0);
-      snprintf(tmp, DEFAULT_BUF_SIZE, "%s%s%s%s\n", msg.timestamp, loglevel, sourceid, msg.payload);
+      snprintf(tmp, DEFAULT_BUF_SIZE, "%s%s%s%s\n", msg.timestamp, loglevel, \
+        sourceid, msg.payload);
       break;
 
       case(MSG_ERROR):
@@ -355,7 +357,8 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
             break;
         }
         usr_led_toggle(1, 1);
-        snprintf(tmp, DEFAULT_BUF_SIZE, "%s%s%s%s\n", msg.timestamp, loglevel, sourceid, msg.payload);
+        snprintf(tmp, DEFAULT_BUF_SIZE, "%s%s%s%s\n", msg.timestamp, loglevel, \
+          sourceid, msg.payload);
         break;
 
     default:
@@ -363,7 +366,7 @@ void manage_ipc_msg(ipcmessage_t msg, char* log_str)
   }
   strcpy(log_str, tmp);
   
-  // disabled display of log messages for now
+  // disabled immediate display of log messages for this program
   /*
   if(msg.type != IPC_USER)
   {

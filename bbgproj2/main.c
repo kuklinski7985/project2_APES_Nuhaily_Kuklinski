@@ -28,6 +28,26 @@ int main(int argc, char* argv[])
 
   init_comm();
 
+  /****using argc to give file name for logger at run time****/
+  if(argc > 1)
+  {
+    strcpy(log_filename, argv[1]);
+  }
+  else
+  {
+    strcpy(log_filename, "prj.log");
+  }
+  
+  strcpy(logfile.filename, log_filename);
+  
+  // Create logfile & error check
+  if(fileCreate(&logfile) == -1)
+  {
+    printf("Error creating logfile.\n");
+    bizzounce = 1;
+  }
+
+  // Thread creation and start
   checking = pthread_create(&log_thread, &attr, logger, (void*)input1);
   if(checking)
   {
@@ -90,34 +110,18 @@ int main(int argc, char* argv[])
     fprintf(stderr, "Error creating socket thread");
     return -1;
   }
-  
+  // End of thread creation
+
+  // Log start of main thread
   strcpy(ipc_msg.timestamp, getCurrentTimeStr());
   ipc_msg.type = MSG_INFO;
   ipc_msg.source = IPC_MAIN;
   ipc_msg.destination = IPC_LOG;
   ipc_msg.src_pid = getpid();
-  strcpy(ipc_msg.payload, "Main thread initialized.\n");
+  strcpy(ipc_msg.payload, "Main thread initialized.\r\n");
   build_ipc_msg(ipc_msg, msg_str);
   mq_send(ipc_queue, msg_str, strlen(msg_str), 0);
   memset(msg_str, 0, strlen(msg_str));
-
-  /****using argc to give file name for logger at run time****/
-  if(argc > 1)
-  {
-    strcpy(log_filename, argv[1]);
-  }
-  else
-  {
-    strcpy(log_filename, "prj.log");
-  }
-  
-  strcpy(logfile.filename, log_filename);
-
-  if(fileCreate(&logfile) == -1)
-  {
-    //printf("Error creating logfile.\n");
-    bizzounce = 1;
-  }
  
  /******monitors the main message queue for new messages and distributes accordingly******/
  /******also provides the system heartbeat for the sensors*******/
@@ -127,14 +131,16 @@ int main(int argc, char* argv[])
 //  printTerminalMenu();
 //  printTerminalPrompt();
 
+  // Infinite loop, monitor IPC message queue and handle new items
   while(bizzounce == 0)
   {
     while(ipc_attr.mq_curmsgs > 0)
     { 
-	    shuffler_king();
-	    mq_getattr(ipc_queue, &ipc_attr);
+	    shuffler_king();  // handle new items
+	    mq_getattr(ipc_queue, &ipc_attr); // get new queue # elements
     }
 
+    // If the heartbeat thread timed out, log an error
     if(log_hb_err > 0)
     {
         memset(msg_str, 0, strlen(msg_str));
@@ -149,7 +155,7 @@ int main(int argc, char* argv[])
         build_ipc_msg(ipc_msg, msg_str);
         mq_send(ipc_queue, msg_str, strlen(msg_str), 0);
         memset(msg_str, 0, strlen(msg_str));
-        // blink an LED?
+        
     }
     mq_getattr(ipc_queue, &ipc_attr);
   }
@@ -181,7 +187,9 @@ int main(int argc, char* argv[])
 
 }
 
-//definition for heartbeat
+/*
+ * @brief handler function for heartbeat thread, monitor clients and threads
+ */
 void* heartbeat()
 {
   char ipc_string[DEFAULT_BUF_SIZE];
@@ -192,7 +200,7 @@ void* heartbeat()
   ipc_struct.source = IPC_HB;
   ipc_struct.destination = IPC_LOG;
   ipc_struct.src_pid = getpid();
-  strcpy(ipc_struct.payload, "Heartbeat thread initialized.\n");
+  strcpy(ipc_struct.payload, "Heartbeat thread initialized.\r\n");
   build_ipc_msg(ipc_struct, ipc_string);
   mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
 
@@ -205,6 +213,7 @@ void* heartbeat()
   //describe the way a process is to be notified about and event
   struct sigevent hb_sig;
 
+  // Set up timer to increment watchdog counter
   hb_sig.sigev_notify = SIGEV_THREAD;
   hb_sig.sigev_notify_function = hb_warn;
   hb_sig.sigev_value.sival_ptr = &temp_hb;
@@ -217,6 +226,7 @@ void* heartbeat()
   timer_create(CLOCK_REALTIME, &hb_sig, &temp_hb);  //creates new timer
   timer_settime(temp_hb, 0, &temp_hb_interval, 0);    //this starts the counter
 
+  // Loop and check count status vs thresholds for each item being checked vs a watchdog
   while(bizzounce == 0)
   {
     if(log_hb_count > HB_THRESHOLD)
@@ -225,6 +235,7 @@ void* heartbeat()
       log_hb_err = 1;
     }
 
+    // If UART1 has timed out, display and log a message, and set an error flag
     if(hb_client_count[0] > HB_THRESHOLD && hb_client_err[0] == 0)
     {
       hb_client_err[0] = 1;
@@ -241,6 +252,7 @@ void* heartbeat()
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
     }
 
+    // If UART2 has timed out, display and log a message, and set an error flag
     if(hb_client_count[1] > HB_THRESHOLD && hb_client_err[1] == 0)
     {
       hb_client_err[1] = 1;
@@ -257,25 +269,10 @@ void* heartbeat()
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
     }
 
+    // If UART4 has timed out, display and log a message, and set an error flag
     if(hb_client_count[2] > HB_THRESHOLD && hb_client_err[2] == 0)
     {
       hb_client_err[2] = 1;
-
-      // form message to main to inform that client has disconnected
-      strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
-      ipc_struct.source = IPC_UART3;
-      ipc_struct.destination = IPC_MAIN;
-      ipc_struct.type = MSG_INFO;
-      ipc_struct.comm_type = COMM_NONE;
-      ipc_struct.src_pid = (pid_t)getpid();
-      strcpy(ipc_struct.payload, "Client at UART3 disconnected.\r\n");
-      build_ipc_msg(ipc_struct, ipc_string);
-      mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
-    }
-
-    if(hb_client_count[3] > HB_THRESHOLD && hb_client_err[3] == 0)
-    {
-      hb_client_err[3] = 1;
 
       // form message to main to inform that client has disconnected
       strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
@@ -288,8 +285,26 @@ void* heartbeat()
       build_ipc_msg(ipc_struct, ipc_string);
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
     }
+
+    // If UART5 has timed out, display and log a message, and set an error flag
+    if(hb_client_count[3] > HB_THRESHOLD && hb_client_err[3] == 0)
+    {
+      hb_client_err[3] = 1;
+
+      // form message to main to inform that client has disconnected
+      strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
+      ipc_struct.source = IPC_UART5;
+      ipc_struct.destination = IPC_MAIN;
+      ipc_struct.type = MSG_INFO;
+      ipc_struct.comm_type = COMM_NONE;
+      ipc_struct.src_pid = (pid_t)getpid();
+      strcpy(ipc_struct.payload, "Client at UART5 disconnected.\r\n");
+      build_ipc_msg(ipc_struct, ipc_string);
+      mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
+    }
   }
 
+  // Display and log exit message for heartbeat thread
   strcpy(ipc_struct.timestamp, getCurrentTimeStr());
   ipc_struct.type = MSG_INFO;
   ipc_struct.source = IPC_HB;
@@ -301,11 +316,22 @@ void* heartbeat()
 
 }
 
+/*
+ * @brief callback function for heartbeat watchdog timer
+ */
 void hb_warn(union sigval arg)
 {
   log_hb_count++;
+  hb_client_count[0]++;
+  hb_client_count[1]++;
+  hb_client_count[2]++;
+  hb_client_count[3]++;
+  //printf("Tick.\r\n");
 }
 
+/*
+ * @brief user terminal task handler function
+ */
 void* userterminal()
 {
   // no need for any open / read / write here because the user terminal is defined as UART0
@@ -315,16 +341,18 @@ void* userterminal()
   char buf[64];
   ipcmessage_t ipc_buf;
   int n = 0;
-//printTerminalMenu();
-//printTerminalPrompt();
+  printTerminalMenu();
+  printTerminalPrompt();
+
   while(bizzounce == 0)
   {
-    //if(scanf("%s", buf) == -1)
+    n = scanf("%s", buf);
+     
     //strcpy(buf, "1");
     //if(buf[0] == '0')
     
-    n = read(fd_terminal, buf, 1);
-    if(n < 0)
+    //n = read(fd_terminal, buf, 1);
+    if(n <= 0)
     {
       //printf("Error reading from terminal. errno: %s\n", strerror(errno));
       // might be better to form a message and put it on the ipc queue so main can do this display
@@ -332,19 +360,21 @@ void* userterminal()
 
     else
     {
+      //printf("%d characters received at terminal.\r\n", n);
       switch(buf[0])
       {
-        case 'm':
+        case 'm': // display menu
         case 'M':
           // would it be better if main did this display?
-          //printTerminalMenu();
+          printTerminalMenu();
+          printTerminalPrompt();
         /*  ipc_buf.source = IPC_USER;
           ipc_buf.destination = IPC_MAIN;
           ipc_buf.type = MSG_QUERY;
           strcpy(ipc_buf.payload, "U\nM"); // request main to display menu */
           break;
 
-        case 'c':
+        case 'c': // push a string to UART1
         case 'C':
           // construct an ipc item to send a string over uart1
           strcpy(ipc_buf.timestamp, getCurrentTimeStr() );
@@ -357,14 +387,15 @@ void* userterminal()
           strcpy(buf, "");
           build_ipc_msg(ipc_buf, buf);
           mq_send(ipc_queue, buf, strlen(buf), 0); // send to main and have main transmit over UART
+          printTerminalPrompt();
           break;
 
-        case 'd':
+        case 'd': // push a string to UART2
         case 'D':
-          // construct an ipc item to send a string over uart1
+          // construct an ipc item to send a string over uart2
           strcpy(ipc_buf.timestamp, getCurrentTimeStr() );
           ipc_buf.source = IPC_USER;
-          ipc_buf.destination = IPC_LOOPBACK;
+          ipc_buf.destination = IPC_UART2;
           ipc_buf.type = MSG_QUERY;
           ipc_buf.comm_type = COMM_QUERY;
           ipc_buf.src_pid = getpid();
@@ -372,9 +403,39 @@ void* userterminal()
           strcpy(buf, "");
           build_ipc_msg(ipc_buf, buf);
           mq_send(ipc_queue, buf, strlen(buf), 0);
+          printTerminalPrompt();
           break;
 
-        case '2':
+        case 'e': // push a string to UART4
+        case 'E':
+          // construct an ipc item to send a string over uart4
+          strcpy(ipc_buf.timestamp, getCurrentTimeStr() );
+          ipc_buf.source = IPC_USER;
+          ipc_buf.destination = IPC_UART4;
+          ipc_buf.type = MSG_QUERY;
+          ipc_buf.comm_type = COMM_QUERY;
+          ipc_buf.src_pid = getpid();
+          strcpy(ipc_buf.payload, "Loopback string.\n");
+          strcpy(buf, "");
+          build_ipc_msg(ipc_buf, buf);
+          mq_send(ipc_queue, buf, strlen(buf), 0);
+          printTerminalPrompt();
+          break;
+
+        case 'f': // push a string to UART5
+        case 'F':
+          // construct an ipc item to send a string over uart5
+          strcpy(ipc_buf.timestamp, getCurrentTimeStr() );
+          ipc_buf.source = IPC_USER;
+          ipc_buf.destination = IPC_UART5;
+          ipc_buf.type = MSG_QUERY;
+          ipc_buf.comm_type = COMM_QUERY;
+          ipc_buf.src_pid = getpid();
+          strcpy(ipc_buf.payload, "Loopback string.\n");
+          strcpy(buf, "");
+          build_ipc_msg(ipc_buf, buf);
+          mq_send(ipc_queue, buf, strlen(buf), 0);
+          printTerminalPrompt();
           break;
 
         default:
@@ -382,22 +443,24 @@ void* userterminal()
           break;
       }
     }
-    //printTerminalPrompt();
+    
   }
 }
 
 void printTerminalMenu()
 {
-/*  printf("\nBBG Server Terminal Menu:\n");
-  printf("(M) Print this menu\n");
-  printf("(C) Send a string to the client at UART1\n");
-  printf("(D) Send a string to the client at UART2\n");*/
-
+  printf("\n\rBBG Server Terminal Menu:\r\n");
+  printf("(M) Print this menu\r\n");
+  printf("(C) Send a string to the client at UART1\r\n");
+  printf("(D) Send a string to the client at UART2\r\n");
+  printf("(E) Send a string to the client at UART4\r\n");
+  printf("(F) Send a string to the client at UART5\r\n");
+/*
   uart_write(fd_terminal, "\r\nBBG Server Terminal Menu:\r\n");
   uart_write(fd_terminal, "(M) Print this menu\r\n" );
   uart_write(fd_terminal, "(C) Send a string to the client at UART1\r\n" );
   uart_write(fd_terminal, "(D) Send a string to the client at UART2\r\n" );
-  
+  */
 }
 
 void printTerminalPrompt()

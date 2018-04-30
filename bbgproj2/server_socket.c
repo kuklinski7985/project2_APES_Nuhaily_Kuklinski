@@ -7,6 +7,9 @@
 
 #include "server_socket.h"
 
+/**
+ * @brief Socket thread handler function
+ */
 void* serversocket()
 {
   int valread;

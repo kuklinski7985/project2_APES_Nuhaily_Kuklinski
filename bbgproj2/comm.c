@@ -31,10 +31,12 @@ int init_comm()
   char uart_portname_base[32];
   char uart_portname[32];
   char c[1];
+  char ipc_string[DEFAULT_BUF_SIZE];
+  ipcmessage_t ipc_struct;
 
   strcpy(uart_portname_base, "/dev/ttyO");
 
-  if(fd_terminal = open("/dev/ttyO0", O_RDWR /*| O_NOCTTY*/ | O_NDELAY) < 0)
+ /* if(fd_terminal = open("/dev/ttyO0", O_RDWR | O_NOCTTY | O_NDELAY) < 0)
   {
     printf("Error opening UART0.\n");
   }
@@ -66,20 +68,76 @@ int init_comm()
   term_attr.c_cflag &= ~CRTSCTS;
 
   // set baud rate etc
-  tcsetattr(fd_terminal, TCSANOW, &term_attr);
+  tcsetattr(fd_terminal, TCSANOW, &term_attr);*/
 
-  for(int i = 0; i < MAX_UART_CLIENTS; i++)
+  if(uart_client[0] = open("/dev/ttyO1", O_RDWR | O_NOCTTY | O_NDELAY) < 0)
   {
-    strcpy(uart_portname, uart_portname_base);
-    sprintf(c, "%d", (i+1) );
-    strcat(uart_portname, c);
-    if(uart_client[i] = open(uart_portname, O_RDWR | O_NOCTTY | O_NDELAY) < 0)
-    {
-  
-    }
-    
+    printf("Error opening UART1.\r\n");
   }
-    
+  else
+  {
+    strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
+    ipc_struct.source = IPC_UART1;
+    ipc_struct.destination = IPC_MAIN;
+    ipc_struct.type = MSG_INFO;
+    ipc_struct.comm_type = COMM_NONE;
+    ipc_struct.src_pid = (pid_t)getpid();
+    strcpy(ipc_struct.payload, "UART1 reference opened successfully.\r\n");
+    build_ipc_msg(ipc_struct, ipc_string);
+    mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
+  }
+
+  if(uart_client[1] = open("/dev/ttyO2", O_RDWR | O_NOCTTY | O_NDELAY) < 0)
+  {
+    printf("Error opening UART2.\r\n");
+  }   
+  else
+  {
+    strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
+    ipc_struct.source = IPC_UART2;
+    ipc_struct.destination = IPC_MAIN;
+    ipc_struct.type = MSG_INFO;
+    ipc_struct.comm_type = COMM_NONE;
+    ipc_struct.src_pid = (pid_t)getpid();
+    strcpy(ipc_struct.payload, "UART2 reference opened successfully.\r\n");
+    build_ipc_msg(ipc_struct, ipc_string);
+    mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
+  }
+
+  if(uart_client[2] = open("/dev/ttyO4", O_RDWR | O_NOCTTY | O_NDELAY) < 0)
+  {
+    printf("Error opening UART.\r\n");
+  }
+  else
+  {
+    strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
+    ipc_struct.source = IPC_UART4;
+    ipc_struct.destination = IPC_MAIN;
+    ipc_struct.type = MSG_INFO;
+    ipc_struct.comm_type = COMM_NONE;
+    ipc_struct.src_pid = (pid_t)getpid();
+    strcpy(ipc_struct.payload, "UART4 reference opened successfully.\r\n");
+    build_ipc_msg(ipc_struct, ipc_string);
+    mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
+  }
+
+  if(uart_client[3] = open("/dev/ttyO5", O_RDWR | O_NOCTTY | O_NDELAY) < 0)
+  {
+    printf("Error opening UART5.\r\n");
+  } 
+  else
+  {
+    strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
+    ipc_struct.source = IPC_UART5;
+    ipc_struct.destination = IPC_MAIN;
+    ipc_struct.type = MSG_INFO;
+    ipc_struct.comm_type = COMM_NONE;
+    ipc_struct.src_pid = (pid_t)getpid();
+    strcpy(ipc_struct.payload, "UART5 reference opened successfully.\r\n");
+    build_ipc_msg(ipc_struct, ipc_string);
+    mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
+  }  
+
   memset(&uart_attr, 0, sizeof(uart_attr));
   tcgetattr(uart_client[0], &uart_attr);  // just get the attributes from one UART port
                                           // and set up to do a mass-edit of all client
@@ -100,11 +158,11 @@ int init_comm()
 
   // used stackoverflow post and termios man page as reference for these setup items
   uart_attr.c_cflag = (term_attr.c_cflag & ~CSIZE) | CS8;     // 8-bit chars
-        // disable IGNBRK for mismatched speed tests; otherwise receive break
-        // as \000 chars
+
   uart_attr.c_iflag &= ~IGNBRK;         // disable break processing
-  uart_attr.c_lflag = 0;                // no signaling chars, no echo,
-                                        // no canonical processing
+  uart_attr.c_lflag &= ~ICANON;         // non-canonical processing
+  //uart_attr.c_lflag |= ECHO;  // no need for this
+
   uart_attr.c_oflag = 0;                // no remapping, no delays
 
   uart_attr.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
@@ -138,7 +196,7 @@ void* comm0threadrx()
 
   while(bizzounce == 0)
   {
-    if(uart_client[0] == 0)
+    if(uart_client[0] == 0) // uart clients not initialized, don't do anything this loop
     {
       continue;
     }
@@ -147,6 +205,7 @@ void* comm0threadrx()
     if(count > 0)
     {
       hb_client_count[0] = 0;
+      printf("UART1 count reset.\r\n");
       if(hb_client_err[0] == 1)
       {
         hb_client_err[0] = 0;
@@ -161,9 +220,10 @@ void* comm0threadrx()
         strcpy(ipc_struct.payload, "Client at UART1 connected.\r\n");
         build_ipc_msg(ipc_struct, ipc_string);
         mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
+        printf("Tick UART1--.\r\n");
       }
     }
-    
+
     //fscanf(uart_client, "%s", msg_buf);
     if(strlen(msg_buf) > 0)
     {
@@ -292,12 +352,12 @@ void* comm2threadrx()
 
       // form message and send to main to inform that the client has connected
       strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
-      ipc_struct.source = IPC_UART3;
+      ipc_struct.source = IPC_UART4;
       ipc_struct.destination = IPC_MAIN;
       ipc_struct.type = MSG_INFO;
       ipc_struct.comm_type = COMM_NONE;
       ipc_struct.src_pid = (pid_t)getpid();
-      strcpy(ipc_struct.payload, "Client at UART3 connected.\r\n");
+      strcpy(ipc_struct.payload, "Client at UART4 connected.\r\n");
       build_ipc_msg(ipc_struct, ipc_string);
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);
     }
@@ -315,7 +375,7 @@ void* comm2threadrx()
       strcpy(msg_buf, "");  // clear the buffer so we can reuse it
       
       // now build the surrounding IPC struct attributes relevant to a message coming from the TIVA
-      ipc_struct.source = IPC_UART3;
+      ipc_struct.source = IPC_UART4;
       ipc_struct.destination = IPC_MAIN;
       ipc_struct.type = IPC_NONE; // we need to determine the type based on what's in the payload I think?
                             // no, let main determine what to do, just pass the payload and don't switch on type
@@ -357,12 +417,12 @@ void* comm3threadrx()
       hb_client_count[3] = 0;
       // form message and send to main to inform that the client has connected
       strcpy(ipc_struct.timestamp, getCurrentTimeStr() );
-      ipc_struct.source = IPC_UART4;
+      ipc_struct.source = IPC_UART5;
       ipc_struct.destination = IPC_MAIN;
       ipc_struct.type = MSG_INFO;
       ipc_struct.comm_type = COMM_NONE;
       ipc_struct.src_pid = (pid_t)getpid();
-      strcpy(ipc_struct.payload, "Client at UART4 connected.\r\n");
+      strcpy(ipc_struct.payload, "Client at UART5 connected.\r\n");
       build_ipc_msg(ipc_struct, ipc_string);
       mq_send(ipc_queue, ipc_string, strlen(ipc_string), 0);      
     }
@@ -380,7 +440,7 @@ void* comm3threadrx()
       strcpy(msg_buf, "");  // clear the buffer so we can reuse it
       
       // now build the surrounding IPC struct attributes relevant to a message coming from the TIVA
-      ipc_struct.source = IPC_UART4;
+      ipc_struct.source = IPC_UART5;
       ipc_struct.destination = IPC_MAIN;
       ipc_struct.type = IPC_NONE; // we need to determine the type based on what's in the payload I think?
                             // no, let main determine what to do, just pass the payload and don't switch on type
