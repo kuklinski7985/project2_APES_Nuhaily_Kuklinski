@@ -2,7 +2,7 @@
 * @file networkinterface.h
 * @brief MAC TCP/IP interaction fxn prototypes
 * @author Andrew Kuklinski and Adam Nuhaily
-* @date 03/11/2018
+* @date 04/28/2018
 **/
 
 /*Code structure obtained from FreeRTOS website

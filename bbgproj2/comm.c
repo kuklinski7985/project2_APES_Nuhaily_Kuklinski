@@ -620,4 +620,3 @@ int uart_read(uart_t uart, char* buffer, int count)
 
   return n;
 }
->>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099

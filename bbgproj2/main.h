@@ -69,4 +69,3 @@ void hb_hb_fn(union sigval arg);
 void* userterminal();
 void printTerminalMenu();
 void printTerminalPrompt();
->>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099

@@ -45,7 +45,7 @@ uint8_t tiva_min = 0;
 SemaphoreHandle_t xtimestamp_sema;
 
 //uint8_t rfid_sec = 0;
-SemaphoreHandle_t xrfid_sema;
+SemaphoreHandle_t xrfid_sema;     //used for controlling access to the global heartbeat variables
 char timeString[9];
 const int hb_timeout = 10;
 
@@ -91,7 +91,7 @@ int main(void)
     // Initialize LED state
     //ROM_GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0, 0); // Probably not strictly necessary
 
-    // Configure UART
+    // Configure UART's 0,6,4, and 3
     ConfigureUART();
 
     // Enable processor interrupts
@@ -108,11 +108,7 @@ int main(void)
     if( (uart_term_rx_queue = xQueueCreate(QUEUE_LENGTH_MAX, \
                                            QUEUE_ELEMENT_SIZE_MAX) ) == NULL)
     {
-            // yeah I know we're bypassing the UART queue. We have to!
-            // It's not created yet!
         UARTprintf("Error creating UART terminal queue.\n");
-
-        // Hang program
         while(1);
     }
 
@@ -123,25 +119,7 @@ int main(void)
         while(1);
     }
 
-
-
-    /*******************************************************************************************************
-     * code for testing the connection to the BBG
-    uint8_t i;
-    uint8_t mess[15] = "6 to 3 testing.";
-    //uint8_t recv[32] = {'x'};
-    UARTprintf("\nmessage from UART4 to UART3\n");
-    for(i =0; i < 15;i++)
-    {
-        ROM_UARTCharPutNonBlocking(UART4_BASE,mess[i]);
-    }
-
-
-    *******************************************************************************************************/
-
     xInitThreads();
-
-    // Print welcome message
 
     vTaskStartScheduler();
 
@@ -160,7 +138,7 @@ int xInitThreads(void)
     xTaskCreate(vGPIOTask, gpioTaskName, 1024, NULL, 1, &gpioTask);
     xTaskCreate(vHeartbeatTask, heartbeatTaskName, 512, NULL, 1, &heartbeatTask);
     xTaskCreate(vRFIDTask, RFIDTaskName, 512, NULL, 1, &RFIDTask);
-    //xTaskCreate(vCameraTask, CameraTaskName, 512, NULL, 1, &CameraTask);
+    //xTaskCreate(vCameraTask, CameraTaskName, 512, NULL, 1, &CameraTask);       //commented out to prevent program from hanging, camera functionality not working
     xTaskCreate(vTerminalLogging, TermLogName, 512, NULL, 1, &TerminalLogging);
     //xNetworkInterfaceInitialise();              //supposed to be the functionality for TCP/IP connection but never got it working
     return 0;
@@ -362,7 +340,7 @@ int xProcessHBInput(char* input)
         return -1;  // need some kind of proper error return status
     }
 
-    task_timed_out = (location_t)(input[0] - '0');  // use your code from PES for this instead
+    task_timed_out = (location_t)(input[0] - '0');
     //UARTprintf("char: %c location: %d\n", input[0], task_timed_out);
     switch(task_timed_out)
     {
@@ -378,7 +356,7 @@ int xProcessHBInput(char* input)
             strcpy(hb_IPC_mess.payload, "GPIO Task Timed out");
             build_ipc_msg(hb_IPC_mess, snd_str);
             xQueueSend(ipc_msg_queue, snd_str, portMAX_DELAY);
-            UARTprintf("\nGPIO Task timed out.\n"); // add timestamp -- actually, should this board know or care what time it is?
+            UARTprintf("\nGPIO Task timed out.\n");
             break;
         case TASK_RFID:
             getTimeStamp(&hb_IPC_mess);
@@ -410,15 +388,6 @@ void vPrintTerminalPrompt(void)
     //UARTprintf("Enter command (M for menu): ");
    // UARTprintf(".");
 }
-
-/* old task1 code:
-      // Turn on LED
-    HWREGBITW(&led_state, 0) = 0b01;
-    ROM_GPIOPinWrite(GPIO_PORTN_BASE, GPIO_PIN_0 | GPIO_PIN_1, led_state);
-
-    // Configure Timer0
-    ConfigureTimer0();
-*/
 
 /**
 * @brief Interrupt handler for communications from the user UART terminal
@@ -455,8 +424,6 @@ void UART_RFID_Handler(void)
         rfid_handler_exit_flag = 1;
     }
 }
-
-
 
 void vRFIDTask(void *pvParameters)
 {
