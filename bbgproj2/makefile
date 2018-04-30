@@ -45,3 +45,4 @@ buildc: $(OBJS_SOCK)
 .PHONY: clean
 clean:
 	-rm *.i *.o *.map *.d *.elf a.out
+>>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099

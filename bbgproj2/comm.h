@@ -67,3 +67,4 @@ int uart_read(uart_t uart, char* buffer, int count);
 // message format (if it contains sensor data): <type>\n<timestamp>\n<data_t>|<payload>
 
 #endif
+>>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099

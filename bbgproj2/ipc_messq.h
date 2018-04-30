@@ -54,3 +54,4 @@ void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct);
 void manage_ipc_msg(ipcmessage_t msg, char* log_str);
 
 #endif /* __ipc_messq_h_*/
+>>>>>>> 44b5fad0908d13310cca4cbae1cdf1b3f726b099

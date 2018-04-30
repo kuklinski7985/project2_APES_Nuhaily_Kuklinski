@@ -2,7 +2,7 @@
 * @file ipc_messq.c
 * @brief fxn definition for queue creation and use
 * @author Andrew Kuklinski and Adam Nuhaily
-* @date 03/11/2018
+* @date 04/28/2018
 **/
 
 #include "ipc_message.h"
@@ -19,7 +19,7 @@ void decipher_ipc_msg(char* ipc_msg, ipcmessage_t* msg_struct)
   int i=0;
   int j=0;
   char tmp1[1];
-  char tmp2[TASKNAME_SIZE];
+  //char tmp2[TASKNAME_SIZE];
 
   // extract timestamp
   for(i=0, j=0; ipc_msg[i] != '\n' && ipc_msg[i] != '\0'; i++, j++)
@@ -99,3 +99,18 @@ void build_ipc_msg(ipcmessage_t msg_struct, char* ipc_msg)
 }
 
 
+void getTimeStamp(ipcmessage_t *ipc_mess)
+{
+    uint8_t ts_sec;
+    uint8_t ts_min;
+
+    xSemaphoreTake(xtimestamp_sema,0);
+
+    ts_sec = tiva_sec;
+    ts_min = tiva_min;
+
+    xSemaphoreGive(xtimestamp_sema);
+    sprintf(timeString, "[%02d:%02d]", ts_min, ts_sec);
+    strcpy(ipc_mess->timestamp, timeString);
+
+}
